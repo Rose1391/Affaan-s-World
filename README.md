@@ -1,7 +1,8 @@
 # Affaan's World v5
 
 A private, offline-first parent app for **Affaan Rehbar** (born 30 Sep 2024). It's a lifelong record vault and gallery, with a short "play together" corner.
-It's a vanilla HTML/CSS/JS installable PWA with no framework and no build step. English + বাংলা throughout.
+**Live:** <https://affaans-world.vercel.app> (Vercel project `affaans-world`).
+It’s a vanilla HTML/CSS/JS installable PWA with no framework and no build step. English + বাংলা throughout.
 
 | Section | What's inside |
 |---|---|
@@ -46,7 +47,7 @@ supabase/schema.sql     ← tables, RLS, RPCs, private bucket + storage policies
 3. Under **Project Settings → API**, copy the **Project URL** and the **anon** (or `sb_publishable_…`) key into `public/config.js`.
    You can paste them in the app under Settings → Sync & account instead.
    **Never use the `service_role` / `sb_secret_` key.** The app refuses it.
-4. Under **Authentication → URL Configuration**, set **Site URL** to your Vercel URL (e.g. `https://affaans-world.vercel.app`) and add it to the Redirect URLs. Confirmation and magic-link emails then come back to the app.
+4. Under **Authentication → URL Configuration**, set **Site URL** to your Vercel URL (`https://affaans-world.vercel.app`) and add it to the Redirect URLs. Confirmation and magic-link emails then come back to the app.
 5. In the app: **Settings → Create account** with your email, confirm the email, then **Sign in**. The first account creates the family.
 6. Second parent: under **Settings → Second parent**, enter their email and tap **Invite**. They install the app, open Settings and **Create account** with that exact email, and join automatically.
 7. After both accounts exist, go to **Authentication → Sign In / Providers → Email** and turn off **Allow new users to sign up**. Strangers couldn't see your data anyway, but this keeps them out of your free quota.
