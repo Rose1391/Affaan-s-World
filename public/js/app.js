@@ -29,7 +29,7 @@ async function route() {
   const view = Views[name] || Views.home;
   const prevSec = curRoute.split('/')[0];
   if (prevSec !== name) { window.scrollTo(0, 0); if (prevSec && name !== 'kid' && prevSec !== 'kid') Motion.wipe(); }
-  clearInterval(window._homeTimer);
+  clearInterval(window._homeTimer); if (window._homeScene) { window._homeScene.stop(); window._homeScene = null; }
   curRoute = h; Speech.stop();
   $$('#nav [data-to]').forEach(b => b.classList.toggle('on', b.dataset.to === name || (name === 'settings' && false)));
   const root = $('#view');
@@ -214,7 +214,7 @@ Views.home = async () => {
   const lastWord = words.filter(x => x.type !== 'skill').sort((x, y) => y.date.localeCompare(x.date))[0];
   const msMonth = msAll.filter(m => m.achieved.startsWith(T.iso.slice(0, 7))).length, photosWeek = items.filter(i => i.date >= wk).length;
   const [first, ...rest] = esc(Child.name).split(' ');
-  const gd = await Garden.data();
+  const gd = await Garden.data(); window._homeStickers = gd.stickers;
   const otd = onThisDay(items, T.iso);
   const lastBackup = await DB.meta.get('lastBackup', null), recN = (await DB.allRecords()).filter(r => !r.deleted && !['kv', 'settings'].includes(r.kind)).length;
   const backupDays = lastBackup ? daysBetween(new Date(lastBackup), new Date()) : null;
@@ -245,15 +245,13 @@ Views.home = async () => {
       <div class="lh-dates"><span class="bn">${bnNum(T.bd.d)} ${T.bd.month} ${bnNum(T.bd.y)} · ${season.bn}</span>${T.hj ? `<span class="mono">${T.hj.d} ${esc(T.hj.month)} ${T.hj.y} AH</span>` : ''}</div>
       <div class="lh-chips"><span class="lh-chip" id="wxChip">${wd ? `${wx[1]} ${wd.hi}°/${wd.lo}° · ${wx[0]}` : '☁️ Dhaka weather'}</span><span class="lh-chip age"><span data-live="age">${ageText(a)}</span></span></div>
     </div>
-    <div class="gh-scene">${Garden.svg(gd)}</div>
   </header>
-  <div class="gh-legend">
-    <button data-act="go" data-to="dev/milestones"><b>🌸 ${msAll.length}</b><span>milestones</span></button>
-    <button data-act="go" data-to="dev/words"><b>🍃 ${nW}</b><span>words</span></button>
-    <button data-act="go" data-to="gallery"><b>🏮 ${items.length}</b><span>photos</span></button>
-    <button data-act="go" data-to="health/vaccines"><b>🌱 ${epiDone}</b><span>vaccines</span></button>
-    <button data-act="go" data-to="dev/growth"><b>📏 ${gh ? gh.height : '—'}</b><span>cm tall</span></button>
-    <button data-act="go" data-to="play"><b>🦋 ${Math.min(12, Math.floor(gd.stars / 8) + (gd.stars ? 1 : 0))}</b><span>butterflies</span></button>
+  <div class="gh-stats">
+    <button data-act="go" data-to="dev/milestones"><b data-count="${msAll.length}">${msAll.length}</b><span>Milestones<i class="bn">মাইলফলক</i></span></button>
+    <button data-act="go" data-to="dev/words"><b data-count="${nW}">${nW}</b><span>Words<i class="bn">শব্দ</i></span></button>
+    <button data-act="go" data-to="gallery"><b data-count="${items.length}">${items.length}</b><span>Photos<i class="bn">ছবি</i></span></button>
+    <button data-act="go" data-to="health/vaccines"><b>${epiDone}<small>/14</small></b><span>EPI doses<i class="bn">টিকা</i></span></button>
+    <button data-act="go" data-to="dev/growth"><b>${gh ? gh.height : '—'}<small>${gh ? 'cm' : ''}</small></b><span>Height<i class="bn">উচ্চতা</i></span></button>
   </div>
 
   <div class="pad home-body">
@@ -323,7 +321,15 @@ function onThisDay(items, todayIso) {
   return out.slice(0, 4);
 }
 Views.home.after = () => {
-  Garden.hydrate($('#lh'));
+  const lhEl = $('#lh'), Tn = Cal.today();
+  window._homeScene && window._homeScene.stop();
+  window._homeScene = HomeScene.start(lhEl, { stickers: window._homeStickers || [], phase: Tn.phase, season: Tn.bd.season.k, rain: lhEl && lhEl.classList.contains('wx-rain') });
+  // the rest of Home eases in as it scrolls into view
+  if (!Motion.still() && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    $$('.home-body > *, .home-body .ha-tile, .home-body .kpi').forEach((el, i) => { el.classList.add('rv'); el.style.setProperty('--rv', (i % 4) * 70 + 'ms'); io.observe(el); });
+  }
+  if (heroPhoto) Media.url(heroPhoto, 'full').then(u => { const im = lhEl && lhEl.querySelector('.gh-locket .op-img'); if (u && im) im.style.backgroundImage = `url('${u}')`; }).catch(() => { });
   // typed greeting
   const g = $('.lh-greet'); if (g) { const full = g.dataset.type, tw = g.querySelector('.tw'); let i = 0; if (Motion.still()) tw.textContent = full; else { const iv = setInterval(() => { tw.textContent = full.slice(0, ++i); if (i >= full.length) clearInterval(iv); }, 38); } }
   // live age to the second (time since midnight on his birth date, Dhaka)

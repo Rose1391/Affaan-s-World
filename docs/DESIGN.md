@@ -10,7 +10,10 @@ The app has two audiences, so it has two design languages:
 
 **Rule 0:** a picture must *mean* something. Decoration that is not driven by his records or by the real time and place (the Dhaka hour, the Bengali season) is removed. That is why the v6 mandala became a garden: a mandala is the same every day, while the garden changes as he grows.
 
-## 2. Content → visual mapping (the Garden algorithm, `js/views/garden.js`)
+## 2. The living landscape (v7.4, `js/core/scene.js`)
+One scene engine paints the opening and the Home hero: atmospheric hill ranges, a forest line, Bangladeshi paddy fields in perspective (golden in Hemonto), a winding river that mirrors the sky, meadow grass and framing shrubs, all lit for the real Dhaka hour (dawn / day / dusk / night) and painted once to offscreen canvases. The tree is one seeded Tree of Life: in the opening it draws itself in gold, its buds open and turn from gold to spring green to deep green, and the sketch becomes living bark. Doels (the national bird) use a flight model: flap/glide cycles, banking, slowing on approach, wings flared to land, then folding and settling. Home runs at 30 fps and pauses off-screen; his photo hangs in the crown as a gold leaf-wreath locket; the stickers he earns stand in the meadow.
+
+### Earlier: the Garden algorithm (`js/views/garden.js`, data model still used for stickers and stats)
 | Record | Visual | Rule |
 |---|---|---|
 | Latest height | Tree trunk height | `46 + (cm − 45) × 1.15`, clamped 70–150 px; tooltip shows the cm |
