@@ -1,7 +1,7 @@
 /* Affaan's World service worker — offline-first.
    App shell is precached; same-origin GETs are served cache-first and refreshed in
    the background. Supabase (cross-origin) is never cached. Bump VERSION on deploys. */
-const VERSION = 'affaan-v5.1.0';
+const VERSION = 'affaan-v6.0.0';
 const SHELL = [
     './',
     './config.js',
@@ -10,6 +10,8 @@ const SHELL = [
     './fonts/baloo-2-latin-800-normal.woff2',
     './fonts/baloo-da-2-bengali-600-normal.woff2',
     './fonts/baloo-da-2-bengali-800-normal.woff2',
+    './fonts/cinzel-latin-600-normal.woff2',
+    './fonts/cinzel-latin-700-normal.woff2',
     './fonts/fraunces-latin-wght-italic.woff2',
     './fonts/fraunces-latin-wght-normal.woff2',
     './fonts/hind-siliguri-bengali-400-normal.woff2',
@@ -32,19 +34,24 @@ const SHELL = [
     './js/content/health-data.js',
     './js/content/learn.js',
     './js/core/backup.js',
+    './js/core/calendars.js',
     './js/core/db.js',
     './js/core/lock.js',
     './js/core/media.js',
+    './js/core/motion.js',
     './js/core/sfx.js',
     './js/core/speech.js',
     './js/core/sync.js',
     './js/core/util.js',
+    './js/core/weather.js',
     './js/core/zip.js',
+    './js/views/calendar.js',
     './js/views/dev.js',
     './js/views/gallery.js',
     './js/views/health.js',
     './js/views/play.js',
     './js/views/reports.js',
+    './js/views/search.js',
     './manifest.webmanifest',
     './vendor/supabase.js',
 ];

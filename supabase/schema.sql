@@ -228,3 +228,10 @@ revoke all on function public.ensure_family(), public.invite_parent(text), publi
   public.upsert_records(uuid, jsonb), public.storage_used(uuid) from public, anon;
 grant execute on function public.ensure_family(), public.invite_parent(text), public.cancel_invite(),
   public.upsert_records(uuid, jsonb), public.storage_used(uuid) to authenticated;
+
+-- ---------- Realtime: push changes to the other parent's phone instantly (RLS still applies) ----------
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'records') then
+    alter publication supabase_realtime add table public.records;
+  end if;
+end $$;

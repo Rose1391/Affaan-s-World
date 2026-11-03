@@ -3,8 +3,18 @@
  photos: compressed copies → private bucket "photos/<family>/<photo>.jpg"
  pull : rows changed on the server since our cursor → applied locally if newer */
 const Sync = (() => {
-  let client = null, session = null, familyId = null, running = false, lastError = '', cfg = null;
-  const state = () => ({ configured: !!client, signedIn: !!session, email: session?.user?.email || '', familyId, running, lastError, online: navigator.onLine });
+  let client = null, session = null, familyId = null, running = false, lastError = '', cfg = null, channel = null, live = false;
+  const state = () => ({ configured: !!client, signedIn: !!session, email: session?.user?.email || '', familyId, running, lastError, online: navigator.onLine, live });
+  // Realtime: the other parent's edits arrive within a second or two (falls back to the 5-minute timer)
+  function subscribe() {
+    if (!client || !session || !familyId || channel || !client.channel) return;
+    try {
+      channel = client.channel('records-' + familyId)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'records', filter: 'family_id=eq.' + familyId }, () => soon())
+        .subscribe(status => { live = status === 'SUBSCRIBED'; Bus.emit('sync', state()); });
+    } catch (e) { channel = null; }
+  }
+  function unsubscribe() { if (channel && client) { try { client.removeChannel(channel); } catch (e) { } } channel = null; live = false; }
 
   function keyRole(key) {
     if (!key) return null;
@@ -47,7 +57,7 @@ const Sync = (() => {
   }
   async function magicLink(email) { need(); const { error } = await client.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } }); if (error) throw error; }
   async function verifyPassword(password) { need(); if (!session) throw new Error('Not signed in'); const { error } = await client.auth.signInWithPassword({ email: session.user.email, password }); if (error) throw error; return true; }
-  async function signOut() { if (client) await client.auth.signOut(); session = null; await DB.meta.set('familyId', null); familyId = null; Bus.emit('sync', state()); }
+  async function signOut() { unsubscribe(); if (client) await client.auth.signOut(); session = null; await DB.meta.set('familyId', null); familyId = null; Bus.emit('sync', state()); }
   async function ensureFamily() {
     const { data, error } = await client.rpc('ensure_family'); if (error) throw error;
     if (familyId && familyId !== data) await DB.meta.set('lastPull', null);   // switched family → full pull
@@ -113,6 +123,7 @@ const Sync = (() => {
       if (cursor) await DB.meta.set('lastPull', cursor);
       await DB.meta.set('lastSync', new Date().toISOString());
       if (pulled) { await Child.load(); Bus.emit('remote', pulled); }
+      subscribe();
     } catch (e) {
       lastError = e.message || String(e); console.warn('sync', e);
     } finally { running = false; Bus.emit('sync', state()); }

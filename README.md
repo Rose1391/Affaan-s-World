@@ -9,10 +9,31 @@ It’s a vanilla HTML/CSS/JS installable PWA with no framework and no build step
 | **Home** | Exact age today (y/m/d, Bangla too), next milestone to watch, next vaccine, latest growth, latest photos, **＋ quick add** |
 | **Play together** | 10/12/15-minute sessions in a locked-down kid mode with big targets. Content carried over from v4: bilingual letters (ABC, স্বরবর্ণ, ব্যঞ্জনবর্ণ), numbers, colours & shapes, 6 story readers, Our World, Great People, 3 games. The session ends on a **"Time to play outside!"** screen, and a grown-up must press and hold to leave. Also: Daily Spark, Books, Tips (off-screen ideas). No ads, no external links. |
 | **Development** | CDC *Learn the Signs. Act Early.* checklists for 2 y, 30 m, 3 y, 4 y and 5 y, tagged Language / Movement / Social / Thinking, each with date achieved, note and photo. Growth log (weight, height, head) with charts and a WHO median reference. First words & skills log. Journal (the v4 Health & Milestones journal). |
+| **Calendar** | Month grid in English and বাংলা, day agenda, upcoming countdowns, events, .ics export to the phone calendar |
 | **Health** | Bangladesh EPI schedule with due and done dates (plus Vitamin A and deworming campaigns, and optional vaccines). Doctor visits, prescriptions and report photos, illnesses, and **Meals & Diet** (the v4 dietician plans and charts) |
 | **Gallery & timeline** | Photos and videos by month, search by caption or tag, filter by month or tag, link to milestones. The timeline shows every event by date. |
 | **Reports** | Monthly summary, a printable **paediatrician summary** (Print → Save as PDF), and the Learning report (the v4 progress report) |
 | **Settings** | Child profile, sync and account, second-parent invite, storage used vs 1 GB, **Backup now / Restore**, PIN and auto-lock, voice check |
+
+## What's new in v6 — EYE 3 standard: Emerald & Gold, alive and real-time
+- **Opening show** (about 5.5 s, every time the app opens; any tap skips; can be turned off in Settings): a gold ring draws itself, a lotus mandala blooms, his photo appears, AFFAAN'S WORLD rises letter by letter in engraved gold, and a greeting ends it.
+- **Living Home hero:**
+  - His photo sits inside a revolving alpana lotus mandala, and the six section symbols ride its edge (tap one to open that section).
+  - The sky follows the Dhaka hour (dawn, day, dusk, night with stars), with drifting clouds and live Dhaka weather (Open-Meteo; rain streaks or a heat glow).
+  - Particles for the Bengali season fall in the background: golden paddy now in Hemonto, kash in Shorot, shimul petals in Boshonto.
+  - Special days tint the hero: his birthday, Pohela Boishakh, Ekushe, Independence and Victory Days, Ramadan and the Eids.
+  - The layers drift with your finger, and an engraved gold name catches a passing gleam.
+  - A typed greeting shows **English, Bangla (বঙ্গাব্দ) and Hijri dates**, beside a live Dhaka clock and his age ticking to the second.
+- **Home briefing:** three lines on development, health and memories, a Today strip (date, weather plus a toddler tip, today's and tomorrow's events, the next countdown), KPI cards that count up, and picture tiles with a **live animated object** and stat. The tiles tilt toward your finger with a gold sheen.
+- **"On the horizon"** countdown rings: next birthday, EPI doses, milestone band, next event.
+- **New Calendar section:** a month grid with Bangla day numbers, a day agenda across every record, a "Coming up" list, your own events (appointments, family, outings), and **.ics export** so the phone's calendar app reminds you.
+- **Every section** has its own moving object (bouncing ball, growing sprout, beating heart with ECG, a real-time clock with an orbiting planet, a camera aperture, rising bars, turning gears), and a **gold mandala wipe** plays between sections.
+- **Enterprise touches:**
+  - **Live sync:** the other parent's edits appear within seconds (Supabase Realtime; RLS still applies).
+  - **Ctrl/⌘+K search** across all records, plus quick actions.
+  - **Undo** after a delete.
+  - **Theme:** Emerald & Gold (night), Ivory & Gold (day), or follow the phone setting.
+  - On desktop the nav becomes a floating dock.
 
 ## What's new in v5.1 — design & "baby attraction"
 - **Eye 3 design language:** Fraunces display type with gold italics, Outfit body, mono numbers, and photo or patterned gradient heroes on every section (a nakshi-kantha–style gold motif), each section in its own tone. Also gold-ruled section heads, sticky pill tabs, a frosted nav with a gold border, and a new Home: age card, a countdown to his next birthday, Play and Gallery tiles, a "Watch next" area, a "Recently" timeline and "The story so far".

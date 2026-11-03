@@ -82,7 +82,7 @@ ACT.viewPhoto = async el => {
 ACT.dlOriginal = async el => { const b = await DB.blob.get(el.dataset.id); const ext = (b.mime || 'image/jpeg').split('/')[1].replace('jpeg', 'jpg').replace('quicktime', 'mov'); downloadBlob(b.original, `affaan-${el.dataset.id.slice(0, 8)}.${ext}`); };
 
 /* ---------- timeline: everything, by date ---------- */
-const EV_COLORS = { camera: '#0E8C8C', star: '#1B8A5A', chat: '#1B3A8F', ruler: '#1B3A8F', syringe: '#8B1E2D', steth: '#8B1E2D', thermo: '#A82838', note: '#C9A14A' };
+const EV_COLORS = { camera: '#2BB5A8', star: '#3DAA66', chat: '#4F8FDB', ruler: '#4F8FDB', syringe: '#E06A58', steth: '#E06A58', thermo: '#E06A58', note: '#C9A14A' };
 async function timelineEvents() {
   const ev = [];
   const push = (date, ic, en, sub = '', photo = '', go = '') => date && ev.push({ date, ic, en, sub, photo, go, color: EV_COLORS[ic] || '#8C857F' });
