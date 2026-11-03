@@ -1,13 +1,15 @@
 /* ============ DOEL'S ISLAND — the kid world · family faces & voices · shape sorter · music hut · easel · stickers ============ */
-const SPOTS = [
-  // id, emoji, English, বাংলা, left%, top%, colour
-  ['family', '🏠', "Who's this?", 'কে এটা?', 27, 12, '#E4573D'], ['colors', '🌈', 'Colours', 'রং', 74, 9, '#9B6BE0'],
-  ['letters', '🔤', 'Letters', 'অক্ষর', 70, 25, '#E8473C'], ['stories', '📖', 'Stories', 'গল্প', 25, 31, '#14998C'],
-  ['numbers', '🐟', 'Count fish', 'গুনি', 53, 42, '#2F7FB8'], ['world', '🐄', 'Farm & world', 'খামার', 21, 52, '#3DAA66'],
-  ['music', '🥁', 'Music', 'গান-বাজনা', 77, 49, '#D9862B'], ['art', '🎨', 'Paint', 'আঁকি', 28, 69, '#E46A8C'],
-  ['sorter', '🧩', 'Shapes', 'আকার', 72, 66, '#7A4FD8'], ['peekaboo', '🙈', 'Peekaboo', 'কুক্কু', 50, 79, '#F57C00'],
-  ['bubbles', '🫧', 'Bubbles', 'বুদবুদ', 22, 88, '#3BA7FF'], ['people', '🌟', 'Heroes', 'মহান ব্যক্তি', 77, 85, '#C99A00'],
-  ['games', '🎮', 'Games', 'খেলা', 50, 96, '#D9467E']];
+// the island is a fixed 400 × 1070 stage that scales as one piece (container units), so nothing can overlap on any screen.
+// Spots follow one winding trail top → bottom in a left / right / centre rhythm.
+const SPOT_LIST = [
+  // id, emoji, English, বাংলা, colour
+  ['family', '🏠', "Who's this?", 'কে এটা?', '#E4573D'], ['colors', '🌈', 'Colours', 'রং', '#9B6BE0'], ['letters', '🔤', 'Letters', 'অক্ষর', '#E8473C'],
+  ['stories', '📖', 'Stories', 'গল্প', '#14998C'], ['numbers', '🐟', 'Count fish', 'গুনি', '#2F7FB8'], ['world', '🐄', 'Farm & world', 'খামার', '#3DAA66'],
+  ['music', '🥁', 'Music', 'গান-বাজনা', '#D9862B'], ['art', '🎨', 'Paint', 'আঁকি', '#E46A8C'], ['sorter', '🧩', 'Shapes', 'আকার', '#7A4FD8'],
+  ['peekaboo', '🙈', 'Peekaboo', 'কুক্কু', '#F57C00'], ['bubbles', '🫧', 'Bubbles', 'বুদবুদ', '#3BA7FF'], ['people', '🌟', 'Heroes', 'মহান ব্যক্তিত্ব', '#C99A00'],
+  ['games', '🎮', 'Games', 'খেলা', '#D9467E']];
+const ISL_W = 400, ISL_H = 1110;
+const SPOTS = SPOT_LIST.map((s, i) => [...s.slice(0, 4), [92, 308, 200][i % 3], 108 + i * 72, s[4]]);
 const PICK_WHY = { family: 'Familiar faces and voices are what toddlers love most', colors: 'He is learning his first colour (30-month milestone)', stories: 'Two-word phrases → stories grow his sentences',
   peekaboo: 'Hide-and-reveal builds memory and joy', letters: 'Letter sounds start to click from 2½', music: 'Rhythm and cause-and-effect', sorter: 'Matching shapes builds thinking and fine motor', numbers: 'Counting together, one by one', art: 'Free scribbling builds the grip for writing', bubbles: 'Pure cause and effect — and colour words' };
 
@@ -24,22 +26,61 @@ async function kidPicks() {
 }
 
 function islandScene() {
-  let trees = '', fl = '';
-  const R = (() => { let h = 7; return () => (h = (h * 9301 + 49297) % 233280) / 233280; })();
-  for (let i = 0; i < 26; i++) { const x = 40 + R() * 320, y = 60 + R() * 640; trees += `<g transform="translate(${x.toFixed(0)} ${y.toFixed(0)})"><path d="M0 0 v10" stroke="#7A4A2A" stroke-width="3"/><circle cy="-4" r="${(8 + R() * 6).toFixed(0)}" fill="${R() > .5 ? '#4FA34A' : '#6DB650'}"/></g>`; }
-  for (let i = 0; i < 40; i++) fl += `<circle cx="${(40 + R() * 320).toFixed(0)}" cy="${(60 + R() * 640).toFixed(0)}" r="2.4" fill="${['#F28DB2', '#FFD45E', '#fff'][i % 3]}"/>`;
-  return `<svg class="isl-bg" viewBox="0 0 400 760" preserveAspectRatio="none" aria-hidden="true">
-    <defs><linearGradient id="iSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7FD3F5"/><stop offset="1" stop-color="#3BA7E0"/></linearGradient></defs>
-    <rect width="400" height="760" fill="url(#iSea)"/>
-    <g class="isl-waves" stroke="#fff" stroke-width="2" fill="none" opacity=".5"><path d="M10 40 q10 -6 20 0 t20 0"/><path d="M350 120 q10 -6 20 0 t20 0"/><path d="M20 400 q10 -6 20 0 t20 0"/><path d="M340 600 q10 -6 20 0 t20 0"/><path d="M30 720 q10 -6 20 0 t20 0"/></g>
-    <path d="M60 30 C150 0 300 10 360 60 C400 140 370 260 380 380 C392 520 370 640 330 720 C250 760 120 758 60 720 C20 620 30 520 22 400 C14 260 20 110 60 30Z" fill="#F4DFA9"/>
-    <path d="M74 44 C160 16 292 26 346 70 C382 146 356 262 366 380 C378 516 356 630 318 706 C244 742 128 740 72 706 C36 610 46 518 38 400 C30 264 36 120 74 44Z" fill="#8FD06A"/>
-    <path d="M74 44 C160 16 292 26 346 70 C382 146 356 262 366 380 C378 516 356 630 318 706 C244 742 128 740 72 706 C36 610 46 518 38 400 C30 264 36 120 74 44Z" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="5 6" opacity=".7"/>
-    <path d="M300 40 C260 140 240 220 210 300 C190 360 220 420 200 480 C180 560 200 640 180 750" stroke="#5FB3E0" stroke-width="22" fill="none" stroke-linecap="round"/>
-    <path d="M300 40 C260 140 240 220 210 300 C190 360 220 420 200 480 C180 560 200 640 180 750" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="4 10" opacity=".6"/>
-    <path d="M108 92 C160 140 280 150 280 190 C280 250 110 230 100 300 C92 380 210 330 212 400 C214 460 90 420 100 520 C110 600 280 520 288 600 C296 660 200 640 200 720" stroke="#F7E7BE" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="1 16"/>
-    ${trees}${fl}
-    <g class="isl-boat"><path d="M0 0 q22 10 48 0 l-6 7 q-18 5 -36 0z" fill="#8A4B2A"/><path d="M24 -18 v16" stroke="#5B3A22" stroke-width="2"/><path d="M24 -18 l14 8 l-14 5z" fill="#E4573D"/></g>
+  const R = (() => { let h = 11; return () => (h = (h * 9301 + 49297) % 233280) / 233280; })();
+  const f1 = n => n.toFixed(1), pts = SPOTS.map(s => [s[4], s[5]]);
+  // smooth trail through every spot (Catmull-Rom → cubic Bézier)
+  const trailPts = [[200, 34], ...pts, [200, 1036]];
+  let trail = `M${trailPts[0].join(' ')}`;
+  for (let i = 0; i < trailPts.length - 1; i++) { const p0 = trailPts[i - 1] || trailPts[i], p1 = trailPts[i], p2 = trailPts[i + 1], p3 = trailPts[i + 2] || p2;
+    trail += ` C${f1(p1[0] + (p2[0] - p0[0]) / 6)} ${f1(p1[1] + (p2[1] - p0[1]) / 6)} ${f1(p2[0] - (p3[0] - p1[0]) / 6)} ${f1(p2[1] - (p3[1] - p1[1]) / 6)} ${p2[0]} ${p2[1]}`; }
+  const isle = 'M70 40 C150 6 270 10 348 52 C392 130 372 300 384 470 C396 640 374 820 352 960 C330 1040 250 1062 190 1060 C120 1058 56 1040 40 960 C22 820 30 650 20 480 C12 300 20 110 70 40Z';
+  const free = (x, y, r) => pts.every(([px, py]) => Math.hypot(px - x, (py - y) * 1.1) > r) && Math.hypot(200 - x, 70 - y) > 60;
+  // trees, bushes and flowers placed only where they don't crowd a spot
+  let trees = '', fl = '', tufts = '';
+  for (let k = 0, n = 0; k < 400 && n < 34; k++) { const x = 52 + R() * 296, y = 70 + R() * 940; if (!free(x, y, 70)) continue; n++;
+    const r = 9 + R() * 9, c = R() > .5 ? 'iTreeA' : 'iTreeB';
+    trees += `<g transform="translate(${f1(x)} ${f1(y)})"><ellipse cx="${f1(r * .3)}" cy="${f1(r * .9)}" rx="${f1(r * 1.05)}" ry="${f1(r * .38)}" fill="#1E5A2A" opacity=".22"/><path d="M-1.6 ${f1(r * .2)} h3.2 v${f1(r * .75)} h-3.2z" fill="#7A4A2A"/><circle r="${f1(r)}" fill="url(#${c})"/><circle cx="${f1(-r * .45)}" cy="${f1(r * .2)}" r="${f1(r * .7)}" fill="url(#${c})"/><circle cx="${f1(r * .5)}" cy="${f1(r * .25)}" r="${f1(r * .65)}" fill="url(#${c})"/></g>`; }
+  for (let k = 0, n = 0; k < 600 && n < 70; k++) { const x = 46 + R() * 308, y = 60 + R() * 960; if (!free(x, y, 48)) continue; n++;
+    fl += `<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(1.8 + R() * 1.6)}" fill="${['#FF8FB8', '#FFD54F', '#FFFFFF', '#B89CFF'][n % 4]}"/>`;
+    tufts += `<path d="M${f1(x + 8)} ${f1(y + 6)} l2 -6 l2 6 l2 -5 l1.5 5" stroke="#4E9A3E" stroke-width="1.2" fill="none" opacity=".55"/>`; }
+  let palms = ''; [[46, 260], [356, 380], [40, 640], [360, 820], [330, 140], [64, 900]].forEach(([x, y], i) => {
+    palms += `<g transform="translate(${x} ${y})"><ellipse cx="6" cy="16" rx="14" ry="4" fill="#000" opacity=".12"/><path d="M0 16 Q2 4 -2 -10" stroke="#9A6A3A" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+      <g class="isl-palm" style="animation-delay:${-i * .7}s"><path d="M-2 -10 q-14 -4 -20 6 M-2 -10 q14 -6 20 4 M-2 -10 q-8 -12 -18 -10 M-2 -10 q8 -12 18 -8 M-2 -10 q0 -10 2 -16" stroke="#3E8E3A" stroke-width="4" fill="none" stroke-linecap="round"/></g></g>`; });
+  const anim = !(window.Motion && Motion.still && Motion.still());
+  const bird = (d, dur, delay, s) => `<g><g transform="scale(${s})"><path class="isl-flap" d="M-8 0 q4 -5 8 0 q4 -5 8 0" stroke="#2B2620" stroke-width="1.8" fill="none" stroke-linecap="round"/></g>${anim ? `<animateMotion dur="${dur}s" begin="${delay}s" repeatCount="indefinite" path="${d}"/>` : ''}</g>`;
+  const fly = (cx, cy, c, dur) => `<g>${anim ? `<animateMotion dur="${dur}s" repeatCount="indefinite" path="M${cx} ${cy} c14 -18 30 -4 22 10 c-8 14 -34 8 -40 -4 c-6 -12 6 -22 18 -6z"/>` : ''}<g class="isl-fly"><ellipse cx="-3" cy="0" rx="3.4" ry="2.4" fill="${c}"/><ellipse cx="3" cy="0" rx="3.4" ry="2.4" fill="${c}"/></g></g>`;
+  return `<svg class="isl-bg" viewBox="0 0 ${ISL_W} ${ISL_H}" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="iSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FD2F2"/><stop offset=".5" stop-color="#3BB0E4"/><stop offset="1" stop-color="#2690D2"/></linearGradient>
+      <radialGradient id="iLand" cx=".45" cy=".35" r=".8"><stop offset="0" stop-color="#A6DE74"/><stop offset=".6" stop-color="#86CB5E"/><stop offset="1" stop-color="#5FAE48"/></radialGradient>
+      <linearGradient id="iSand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBE7B5"/><stop offset="1" stop-color="#EBCB86"/></linearGradient>
+      <radialGradient id="iTreeA" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#8FD86A"/><stop offset=".55" stop-color="#4FA340"/><stop offset="1" stop-color="#2F7A32"/></radialGradient>
+      <radialGradient id="iTreeB" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#B5E37A"/><stop offset=".55" stop-color="#6DB650"/><stop offset="1" stop-color="#3E8E3A"/></radialGradient>
+      <linearGradient id="iRiver" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FE0F7"/><stop offset="1" stop-color="#3FA7DC"/></linearGradient>
+      <filter id="iBlur" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="9"/></filter>
+      <filter id="iSoft"><feGaussianBlur stdDeviation="2.2"/></filter>
+    </defs>
+    <rect width="${ISL_W}" height="${ISL_H}" fill="url(#iSea)"/>
+    <g class="isl-glints" fill="#fff">${Array.from({ length: 22 }, (_, i) => `<rect x="${f1(8 + R() * 384)}" y="${f1(8 + R() * 1050)}" width="${f1(6 + R() * 10)}" height="1.6" rx=".8" style="animation-delay:${f1(-R() * 4)}s"/>`).join('')}</g>
+    <path d="${isle}" fill="#B8F0FA" filter="url(#iBlur)" transform="translate(200 535) scale(1.07) translate(-200 -535)" opacity=".9"/>
+    <path d="${isle}" fill="none" stroke="#fff" stroke-width="3" opacity=".75" class="isl-foam" transform="translate(200 535) scale(1.035) translate(-200 -535)"/>
+    <path d="${isle}" fill="url(#iSand)"/>
+    <path d="${isle}" fill="url(#iLand)" transform="translate(200 535) scale(.93 .955) translate(-200 -535)"/>
+    <g opacity=".35"><ellipse cx="120" cy="420" rx="70" ry="40" fill="#C2EA8C"/><ellipse cx="290" cy="700" rx="64" ry="44" fill="#C2EA8C"/><ellipse cx="150" cy="880" rx="60" ry="34" fill="#9FD670"/></g>
+    ${tufts}
+    <path d="M318 96 C300 180 360 260 330 340 C300 420 352 500 330 600 C310 690 360 760 336 860 C318 930 330 990 360 1040" stroke="url(#iRiver)" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <path d="M318 96 C300 180 360 260 330 340 C300 420 352 500 330 600 C310 690 360 760 336 860 C318 930 330 990 360 1040" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="6 14" opacity=".7" class="isl-flow"/>
+    <ellipse cx="318" cy="94" rx="22" ry="12" fill="url(#iRiver)"/>
+    <path d="${trail}" stroke="#C9A866" stroke-width="15" fill="none" stroke-linecap="round" opacity=".45" filter="url(#iSoft)"/>
+    <path d="${trail}" stroke="#F6E6BE" stroke-width="11" fill="none" stroke-linecap="round" class="isl-trail" pathLength="1"/>
+    <path d="${trail}" stroke="#fff" stroke-width="2" fill="none" stroke-dasharray="2 9" stroke-linecap="round" opacity=".8"/>
+    ${fl}${trees}${palms}
+    <g transform="translate(200 70)"><ellipse cx="8" cy="34" rx="44" ry="9" fill="#1E5A2A" opacity=".25"/><path d="M-6 34 C-4 18 -5 6 -2 -6 L4 -6 C6 8 6 20 9 34Z" fill="#7A4A2A"/>
+      <circle cx="0" cy="-22" r="30" fill="url(#iTreeA)"/><circle cx="-24" cy="-10" r="20" fill="url(#iTreeA)"/><circle cx="25" cy="-12" r="21" fill="url(#iTreeB)"/><circle cx="0" cy="-38" r="18" fill="url(#iTreeB)"/>
+      <g class="isl-fruit">${[[-14, -24], [12, -30], [20, -6], [-26, -4], [2, -10]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.2" fill="#FF8A3D"/>`).join('')}</g></g>
+    <g class="isl-boat">${anim ? '<animateMotion dur="30s" repeatCount="indefinite" path="M-50 1092 C80 1084 140 1100 220 1090 S360 1086 450 1094"/>' : ''}<g class="isl-bob"><path d="M-22 0 q22 10 44 0 l-5 7 q-17 5 -34 0z" fill="#8A4B2A"/><path d="M0 -20 v18" stroke="#5B3A22" stroke-width="2"/><path d="M0 -20 l14 9 l-14 5z" fill="#E4573D"/></g></g>
+    ${bird('M-30 220 C120 170 260 260 440 190', 19, 0, 1)}${bird('M-30 250 C120 200 280 290 440 220', 19, 1.2, .8)}${bird('M430 640 C300 600 120 690 -40 620', 23, 4, .9)}
+    ${fly(150, 500, '#FFB13B', 9)}${fly(260, 820, '#FF7EB6', 11)}${fly(120, 160, '#7FC8FF', 10)}
   </svg>`;
 }
 async function islandHTML() {
@@ -48,7 +89,7 @@ async function islandHTML() {
   return `<div class="kpad island-wrap">
     <div class="khead"><div class="kme">${me}</div><div class="khello"><b>Hi ${esc(Child.first())}!</b><span class="bn">কোথায় যাবো?</span></div><button class="kdoel-btn" data-act="kDoel" aria-label="Doel">${doelSVG()}</button></div>
     <div class="island">${islandScene()}
-      ${SPOTS.map(([id, em, en, bn, x, y, c]) => `<button class="spot ${picks.includes(id) ? 'rec' : ''}" style="left:${x}%;top:${y}%;--c:${c}" data-act="kOpen" data-to="${id}"><span class="sp-ic">${em}</span><b>${en}</b><span class="bn">${bn}</span></button>`).join('')}
+      ${SPOTS.map(([id, em, en, bn, x, y, c], i) => `<button class="spot ${picks.includes(id) ? 'rec' : ''}" style="left:${(x / ISL_W * 100).toFixed(2)}%;top:${(y / ISL_H * 100).toFixed(2)}%;--c:${c};--i:${i}" data-act="kOpen" data-to="${id}"><span class="sp-ic">${em}</span><b>${en}</b><span class="bn">${bn}</span></button>`).join('')}
     </div></div>`;
 }
 

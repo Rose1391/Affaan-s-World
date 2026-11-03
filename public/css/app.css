@@ -1045,23 +1045,44 @@ html.intro-on,html.intro-on body{overflow:hidden}
 .vbtn.rec{background:#FBE3DE;color:#C0392B;font-size:17px;padding:0 12px}.vbtn.rec.live{background:#C0392B;color:#fff;font-size:13px;animation:pulse 1s infinite}
 .vbtn.del{color:var(--mist);font-size:13px}
 
-/* ---------- KID: Doel's island ---------- */
-.island-wrap .khead{margin-bottom:10px}
-.kdoel-btn .doel{width:72px;height:72px}
-.island{position:relative;width:100%;aspect-ratio:400/760;border-radius:30px;overflow:hidden;box-shadow:0 12px 30px rgba(30,52,104,.22);border:5px solid #fff}
-.isl-bg{position:absolute;inset:0;width:100%;height:100%}
-.isl-boat{animation:islBoat 34s linear infinite}@keyframes islBoat{from{transform:translate(-60px,22px)}to{transform:translate(440px,30px)}}
-.isl-waves{animation:gRip 4s ease-in-out infinite}
-.spot{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;width:100px;z-index:2}
-.spot .sp-ic{width:68px;height:68px;border-radius:50%;display:grid;place-items:center;font-size:37px;background:radial-gradient(circle at 35% 30%,#fff,color-mix(in srgb,var(--c) 28%,#fff));border:4px solid var(--c);box-shadow:0 6px 0 color-mix(in srgb,var(--c) 60%,#000),0 10px 18px rgba(0,0,0,.2);animation:spotBob 3.2s ease-in-out infinite;transition:transform .12s}
-.spot:nth-child(odd) .sp-ic{animation-delay:-1.4s}
-@keyframes spotBob{50%{transform:translateY(-4px)}}
-.spot b{font-size:13px;font-weight:800;color:#26314B;background:rgba(255,255,255,.9);padding:1px 9px;border-radius:10px;margin-top:5px;white-space:nowrap}
-.spot .bn{font-size:12px;color:#5D6880;font-weight:700;background:rgba(255,255,255,.75);border-radius:8px;padding:0 7px;margin-top:2px}
-.spot.rec .sp-ic{animation:spotGlow 1.6s ease-in-out infinite}
-@keyframes spotGlow{0%,100%{box-shadow:0 6px 0 color-mix(in srgb,var(--c) 60%,#000),0 0 0 4px rgba(255,201,60,.5),0 0 18px 6px rgba(255,201,60,.45)}50%{box-shadow:0 6px 0 color-mix(in srgb,var(--c) 60%,#000),0 0 0 9px rgba(255,201,60,.35),0 0 30px 12px rgba(255,201,60,.55)}}
-.spot.rec::before{content:"✨";position:absolute;top:-10px;right:10px;font-size:20px;animation:obTw 1.6s infinite}
-.spot:active .sp-ic{transform:translateY(5px) scale(.94)}
+/* ---------- KID: Doel's island (v7.2 — one scaled stage, nothing can overlap) ---------- */
+.island-wrap{max-width:560px;margin:0 auto}
+.island-wrap .khead{margin:0 4px 12px;gap:10px;flex-wrap:nowrap}
+.island-wrap .kme{width:clamp(58px,17vw,84px);height:clamp(58px,17vw,84px)}
+.island-wrap .khello b{font-size:clamp(22px,6.6vw,32px);white-space:nowrap}
+.island-wrap .khello .bn{font-size:clamp(17px,5vw,23px);white-space:nowrap}
+.kdoel-btn .doel{width:clamp(48px,14vw,68px);height:clamp(48px,14vw,68px)}
+.island{position:relative;container-type:inline-size;width:100%;aspect-ratio:400/1110;border-radius:clamp(22px,7cqw,34px);overflow:hidden;
+  box-shadow:0 2px 0 #fff inset,0 18px 40px rgba(20,60,110,.28),0 0 0 5px #fff,0 0 0 7px rgba(59,167,224,.25);isolation:isolate}
+.isl-bg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.isl-trail{stroke-dasharray:1;stroke-dashoffset:1;animation:islDraw 2.2s .15s cubic-bezier(.6,.1,.3,1) forwards}
+@keyframes islDraw{to{stroke-dashoffset:0}}
+.isl-foam{stroke-dasharray:10 8;animation:islFoam 6s linear infinite}@keyframes islFoam{to{stroke-dashoffset:-72}}
+.isl-flow{animation:islFoam 3s linear infinite}
+.isl-glints rect{opacity:0;animation:islGlint 4s ease-in-out infinite}@keyframes islGlint{40%,60%{opacity:.75}}
+.isl-palm{transform-box:fill-box;transform-origin:50% 100%;animation:islSway 4.5s ease-in-out infinite}@keyframes islSway{50%{transform:rotate(5deg)}}
+.isl-bob{animation:islBob 2.6s ease-in-out infinite}@keyframes islBob{50%{transform:translateY(2px) rotate(-2deg)}}
+.isl-flap{transform-box:fill-box;transform-origin:50% 100%;animation:islFlap .5s ease-in-out infinite alternate}@keyframes islFlap{to{transform:scaleY(-.6)}}
+.isl-fly{transform-box:fill-box;transform-origin:50% 50%;animation:islWing .18s ease-in-out infinite alternate}@keyframes islWing{to{transform:scaleX(.25)}}
+.isl-fruit circle{animation:islFruit 3s ease-in-out infinite}@keyframes islFruit{50%{opacity:.6}}
+/* spots: sized in container units → identical layout on every screen */
+.spot{position:absolute;transform:translateX(-50%);margin-top:-10cqw;display:flex;flex-direction:column;align-items:center;width:31cqw;z-index:2;
+  border:0;background:none;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent;animation:spotIn .55s calc(.25s + var(--i) * 75ms) cubic-bezier(.3,1.6,.5,1) both}
+@keyframes spotIn{from{opacity:0;transform:translateX(-50%) translateY(6cqw) scale(.4)}}
+.spot .sp-ic{position:relative;width:20cqw;height:20cqw;border-radius:50%;display:grid;place-items:center;font-size:10.5cqw;line-height:1;
+  background:radial-gradient(circle at 34% 28%,#fff 0%,#fff 18%,color-mix(in srgb,var(--c) 22%,#fff) 55%,color-mix(in srgb,var(--c) 42%,#fff) 100%);
+  border:1.2cqw solid var(--c);box-shadow:0 1.4cqw 0 color-mix(in srgb,var(--c) 62%,#000),0 3cqw 4cqw rgba(10,40,20,.28);
+  animation:spotBob 3.4s calc(var(--i) * -.45s) ease-in-out infinite;transition:transform .12s}
+.spot .sp-ic::after{content:"";position:absolute;left:18%;top:9%;width:42%;height:26%;border-radius:50%;background:linear-gradient(#fff,rgba(255,255,255,0));opacity:.85;pointer-events:none}
+.spot::before{content:"";position:absolute;top:18.5cqw;left:50%;width:16cqw;height:3cqw;margin-left:-8cqw;border-radius:50%;background:rgba(20,60,20,.22);filter:blur(1px);z-index:-1}
+@keyframes spotBob{50%{transform:translateY(-1.2cqw)}}
+.spot b{font-size:max(11px,3.6cqw);font-weight:800;color:#20304F;background:rgba(255,255,255,.94);padding:.4cqw 2.4cqw;border-radius:99px;margin-top:2.2cqw;white-space:nowrap;box-shadow:0 .6cqw 1.4cqw rgba(20,40,80,.15)}
+.spot .bn{font-size:max(10.5px,3.2cqw);color:#4A5672;font-weight:700;background:rgba(255,255,255,.8);border-radius:99px;padding:0 2cqw;margin-top:.6cqw;white-space:nowrap}
+.spot.rec .sp-ic{animation:spotBob 3.4s ease-in-out infinite,spotGlow 1.8s ease-in-out infinite}
+@keyframes spotGlow{0%,100%{box-shadow:0 1.4cqw 0 color-mix(in srgb,var(--c) 62%,#000),0 0 0 1cqw rgba(255,201,60,.55),0 0 4cqw 1.5cqw rgba(255,201,60,.45)}50%{box-shadow:0 1.4cqw 0 color-mix(in srgb,var(--c) 62%,#000),0 0 0 2.2cqw rgba(255,201,60,.3),0 0 7cqw 3cqw rgba(255,201,60,.55)}}
+.spot.rec::after{content:"✨";position:absolute;top:-2cqw;right:3cqw;font-size:5cqw;animation:obTw 1.6s infinite}
+.spot:active .sp-ic{transform:translateY(1.2cqw) scale(.93);box-shadow:0 .3cqw 0 color-mix(in srgb,var(--c) 62%,#000)}
+@media (prefers-reduced-motion:reduce){.isl-trail{stroke-dashoffset:0}.spot{animation:none}}
 .famempty{padding:30px 20px;gap:8px;text-align:center}.famempty b{font-size:24px}.famempty small{font-family:var(--body);font-size:13px;color:#5D6880;font-weight:500}
 .faces{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}.faces.two{grid-template-columns:1fr 1fr}
 .face{display:flex;flex-direction:column;align-items:center;padding:12px;background:#fff;border-radius:28px;box-shadow:0 7px 0 #DCE7F2}
@@ -1187,3 +1208,27 @@ body.winddown .spot .sp-ic,body.winddown .ktile{animation-duration:7s}
 .hback{border:0;background:#fff;border-radius:99px;padding:10px 16px;font-weight:800;font-size:14px;color:#5A3E00;box-shadow:0 3px 0 #E8DCC4;cursor:pointer}
 .hnav{display:flex;justify-content:space-between;gap:10px;margin-top:6px}
 @media (max-width:420px){.hcard{flex-direction:column;align-items:flex-start;gap:12px}.hgrid{grid-template-columns:1fr 1fr}}
+
+/* ---------- v7.2 opening: the Golden Tree of Life (js/core/opening.js) ---------- */
+#opening{position:fixed;inset:0;z-index:2147483000;background:#02110C;overflow:hidden;cursor:pointer;transition:opacity .6s ease,transform .6s ease;-webkit-user-select:none;user-select:none}
+#opening.out{opacity:0;transform:scale(1.04)}
+#opening canvas{position:absolute;inset:0;display:block}
+#opening .op-photo{position:absolute;border-radius:50%;opacity:0;transform:scale(.6);animation:opPhoto 1.1s 3.5s cubic-bezier(.3,1.4,.5,1) forwards}
+#opening .op-img{position:absolute;inset:9%;border-radius:50%;background:#0A3326 center/cover no-repeat;box-shadow:0 0 0 2px #F2D088,0 0 0 5px rgba(2,17,12,.9),0 0 0 6.5px #C9A04A,0 0 40px 10px rgba(242,200,110,.45)}
+#opening .op-ring{position:absolute;inset:0;border-radius:50%;border:1.5px dashed rgba(242,208,136,.85);animation:spin 18s linear infinite}
+#opening .op-ring::before{content:"";position:absolute;inset:-7%;border-radius:50%;border:1px solid rgba(242,208,136,.35)}
+@keyframes opPhoto{to{opacity:1;transform:scale(1)}}
+#opening .op-text{position:absolute;left:0;right:0;top:calc(var(--ground,60vh) + 4vh);text-align:center;padding:0 16px;pointer-events:none}
+#opening .op-title{font-family:"Cinzel",var(--display);font-weight:700;font-size:clamp(28px,8.4vw,54px);letter-spacing:.06em;line-height:1.1;white-space:nowrap;
+  background:linear-gradient(100deg,#B8862B 0%,#F7DE9C 28%,#FFF6DA 40%,#E9BE5C 52%,#B8862B 70%,#F2D088 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 10px rgba(242,190,90,.35));animation:opSheen 2.6s 5.1s ease-in-out forwards}
+#opening .op-title span{display:inline-block;opacity:0;transform:translateY(16px);animation:opRise .7s cubic-bezier(.2,1.3,.4,1) forwards;background:inherit;-webkit-background-clip:text;background-clip:text}
+#opening .op-sp{display:inline-block;width:.35em}
+@keyframes opRise{to{opacity:1;transform:none}}
+@keyframes opSheen{from{background-position:100% 0}to{background-position:0 0}}
+#opening .op-rule{width:0;height:1px;margin:10px auto 8px;background:linear-gradient(90deg,transparent,#E9C46A,transparent);animation:opRule 1s 5.3s ease-out forwards}
+@keyframes opRule{to{width:min(280px,60vw)}}
+#opening .op-bn{font:600 clamp(18px,5.2vw,26px)/1.3 "Hind Siliguri",var(--bnf);color:#F2D9A0;opacity:0;animation:opFade .8s 5.4s forwards}
+#opening .op-greet{margin-top:8px;font:500 clamp(12px,3.4vw,15px)/1.4 var(--body);letter-spacing:.04em;color:rgba(240,228,200,.8);opacity:0;animation:opFade .8s 5.75s forwards}
+@keyframes opFade{to{opacity:1}}
+#opening .op-skip{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));font:500 12px/1 var(--body);letter-spacing:.08em;color:rgba(242,216,150,.6);padding:8px 12px;border:1px solid rgba(242,216,150,.25);border-radius:99px}

@@ -422,8 +422,8 @@ Views.settings = async () => {
     <section class="panel"><h3>Appearance · <span class="bn">চেহারা</span></h3>
       ${F.row(F.select('theme', 'Theme', 'থিম', [['garden', 'Garden · day'], ['emerald', 'Night garden'], ['auto', 'Follow phone setting']], await DB.meta.get('theme', 'garden')).replace('<select', '<select data-change="setTheme"'),
         F.select('textsize', 'Text size', 'লেখার আকার', [['1', 'Normal'], ['1.12', 'Large'], ['1.25', 'Extra large']], await DB.meta.get('textsize', '1')).replace('<select', '<select data-change="setTextSize"'))}
-      ${F.select('introMode', 'Opening film', 'শুরুর ছবি', [['short', 'Short · sunrise and title (4 s)'], ['full', 'Full film every time (15 s)'], ['off', 'Off']], await introMode()).replace('<select', '<select data-change="setIntroMode"')}
-      <div class="btnrow"><button class="btn" data-act="watchFilm">▶ Watch the film · <span class="bn">ছবিটি দেখুন</span></button></div>
+      ${F.select('introMode', 'Opening animation', 'শুরুর অ্যানিমেশন', [['tree', 'The Golden Tree (7 s)'], ['film', 'Photo film (15 s, when the frames are added)'], ['off', 'Off']], await introMode()).replace('<select', '<select data-change="setIntroMode"')}
+      <div class="btnrow"><button class="btn" data-act="watchOpening">▶ Play the opening · <span class="bn">আবার দেখুন</span></button><button class="btn" data-act="watchFilm">▶ Watch the film · <span class="bn">ছবিটি দেখুন</span></button></div>
     </section>
 
     <section class="panel"><h3>Security · <span class="bn">নিরাপত্তা</span></h3>
@@ -472,15 +472,14 @@ function applyTheme(t) {
 const applyTextSize = z => document.documentElement.style.setProperty('--zoom', z || 1);
 ACT.setTextSize = async el => { await DB.meta.set('textsize', el.value); applyTextSize(el.value); };
 ACT.setTheme = async el => { await DB.meta.set('theme', el.value); applyTheme(el.value); };
-async function introMode() { const m = await DB.meta.get('introMode'); if (m) return m; return (await DB.meta.get('intro', true)) ? 'short' : 'off'; }
-ACT.setIntroMode = async el => { await DB.meta.set('introMode', el.value); toast(el.value === 'off' ? 'Opening film off' : el.value === 'full' ? 'Full film on every open' : 'Short opening on'); };
-ACT.watchFilm = () => Film.play('full');
-// first ever open → the whole film; afterwards the chosen mode (short by default)
+async function introMode() { const m = await DB.meta.get('introMode'); if (m === 'short' || m === 'full') return 'tree'; if (m) return m; return (await DB.meta.get('intro', true)) ? 'tree' : 'off'; }
+ACT.setIntroMode = async el => { await DB.meta.set('introMode', el.value); toast(el.value === 'off' ? 'Opening off' : el.value === 'film' ? 'Photo film on open' : 'Golden Tree on open'); };
+ACT.watchOpening = () => Opening.play();
+ACT.watchFilm = async () => { if (!(await Film.play('full'))) toast('The photo film frames haven’t been added yet'); };
 async function openingFilm() {
   const m = await introMode(); if (m === 'off') return;
-  const seen = await DB.meta.get('filmSeen', false);
-  await Film.play(!seen || m === 'full' ? 'full' : 'short');
-  if (!seen) await DB.meta.set('filmSeen', true);
+  if (m === 'film' && await Film.play('full')) return;
+  await Opening.play();
 }
 ACT.setLockAfter = async el => { await DB.meta.set('lockAfter', Number(el.value)); toast('Saved'); };
 ACT.changePin = () => Lock.change();

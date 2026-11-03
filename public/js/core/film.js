@@ -94,7 +94,7 @@ const Film = (() => {
       <button class="fm-snd" type="button" aria-label="Sound">🔈</button><div class="fm-skip">tap to skip</div><div class="fm-bar"><i></i></div>`;
     document.body.appendChild(el); document.documentElement.classList.add('intro-on');
     const imgs = await timeout(Promise.all(shots.map(s => load(s.src))), full ? 9000 : 5000);
-    if (!imgs || imgs.some(i => !i)) { el.remove(); document.documentElement.classList.remove('intro-on'); return; }
+    if (!imgs || imgs.some(i => !i)) { el.remove(); document.documentElement.classList.remove('intro-on'); return false; }
     const cv = el.querySelector('canvas'), ctx = cv.getContext('2d'), bg = el.querySelector('.fm-bg'), bar = el.querySelector('.fm-bar i'), title = el.querySelector('.fm-title');
     let W, H, L;
     const size = () => { const dpr = Math.min(2, devicePixelRatio || 1), r = cv.getBoundingClientRect(); W = cv.width = Math.round(r.width * dpr); H = cv.height = Math.round(r.height * dpr); L = makeLayers(W, H); };
@@ -178,7 +178,7 @@ const Film = (() => {
     };
     let resolve; const out = new Promise(r => resolve = r);
     const finish = fast => { if (done) return; done = true; cancelAnimationFrame(raf); removeEventListener('resize', size); snd && snd.stop(); el.classList.add('out');
-      setTimeout(() => { el.remove(); document.documentElement.classList.remove('intro-on'); resolve(); }, fast ? 280 : 450); };
+      setTimeout(() => { el.remove(); document.documentElement.classList.remove('intro-on'); resolve(true); }, fast ? 280 : 450); };
     el.addEventListener('pointerdown', () => finish(true)); document.addEventListener('keydown', () => finish(true), { once: true });
     raf = requestAnimationFrame(frame);
     return out;
