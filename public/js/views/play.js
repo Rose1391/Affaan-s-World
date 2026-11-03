@@ -59,7 +59,7 @@ Views.play = async () => {
     <p class="muted sm">Picked from his age and what you've recorded — they glow on Doel's island.</p>
     ${Voice.count() < 5 ? `<button class="ghostadd" data-act="playTab" data-v="voices">🎙️ Record your voice for letters, words & stories — he'll love hearing you</button>` : ''}
     ${shead('🎈', 'Inside the session', 'যা থাকছে')}
-    <div class="chips">${['🔤 Letters · অক্ষর', '🔢 Numbers · সংখ্যা', '🎨 Colours & Shapes · রং ও আকার', '📖 6 Stories · গল্প', '🌍 Our World · পৃথিবী', '🌟 Great People · মহান ব্যক্তি', '🫧 Bubble Pop · বুদবুদ', '🙈 Peekaboo · কুক্কু', '🏠 Who’s this? · পরিবার', '🧩 Shape sorter · আকার', '🥁 Music hut · গান', '🎨 Easel · আঁকা', '🎮 3 more games · খেলা'].map(x => `<span class="chip">${x}</span>`).join('')}</div>`;
+    <div class="chips">${['🔤 Letters · অক্ষর', '🔢 Numbers · সংখ্যা', '🎨 Colours & Shapes · রং ও আকার', '📖 6 Stories · গল্প', '🌍 Our World · পৃথিবী', '🌟 45 Great Personalities · মহান ব্যক্তিত্ব', '🫧 Bubble Pop · বুদবুদ', '🙈 Peekaboo · কুক্কু', '🏠 Who’s this? · পরিবার', '🧩 Shape sorter · আকার', '🥁 Music hut · গান', '🎨 Easel · আঁকা', '🎮 3 more games · খেলা'].map(x => `<span class="chip">${x}</span>`).join('')}</div>`;
   } else if (playTab === 'spark') body = await renderSpark();
   else if (playTab === 'books') body = await renderBooks();
   else if (playTab === 'family') body = await familySetupHTML();
@@ -102,7 +102,7 @@ function renderTips() {
 
 
 /* ================= KID MODE — built for a 2-year-old ================= */
-const kidState = { letterSet: 'en', numLang: 'en', cs: 'col', world: Object.keys(WORLD)[0], people: Object.keys(PEOPLE)[0], story: null, page: 0 };
+const kidState = { letterSet: 'en', numLang: 'en', cs: 'col', world: Object.keys(WORLD)[0], people: null, story: null, page: 0 };
 const LETTER_SETS = {
   en: { label: 'ABC', data: LETTERS_EN, color: '#E8604C', area: 'letters_en', tpl: l => [[`${l[0]}.`, 'en-US', 0.7], [`${l[0]} for ${l[1]}!`, 'en-US', 0.85]], word: l => `${l[0]} for ${l[1]}` },
   bv: { label: 'স্বরবর্ণ', data: BN_VOWELS, color: '#C0392B', area: 'letters_bn_v', tpl: l => [[`${l[0]}।`, 'bn-BD', 0.7], [`${l[0]} তে ${l[1]}।`, 'bn-BD', 0.85]], word: l => `${l[0]} তে ${l[1]}`, bn: true },
@@ -181,7 +181,7 @@ Views.kid = async (p) => {
   if (sub === 'stories') return kidShell(storiesHTML(), { title: 'Stories<br><span class="bn">গল্প</span>', color: '#0F5D68' });
   if (sub === 'story') return kidShell(readerHTML(arg), { color: '#0F5D68' });
   if (sub === 'world') return kidShell(worldHTML(), { title: 'Our World<br><span class="bn">পৃথিবী</span>', color: '#256B3E' });
-  if (sub === 'people') return kidShell(peopleHTML(), { title: 'Heroes<br><span class="bn">মহান ব্যক্তি</span>', color: '#B07A00' });
+  if (sub === 'people') return kidShell(peopleHTML(), { title: 'Great Personalities<br><span class="bn">মহান ব্যক্তিত্ব</span>', color: '#B07A00' });
   if (sub === 'games') return kidShell(gamesHTML(), { title: 'Games<br><span class="bn">খেলা</span>', color: '#B03A6E' });
   if (sub === 'bubbles') return kidShell(`<div class="kpad"><div class="bubbles" id="bubbles"><div class="bubhint">Pop! <span class="bn">ফাটাও!</span></div></div></div>`, { title: 'Bubbles<br><span class="bn">বুদবুদ</span>', color: '#1F6FC0' });
   if (sub === 'peekaboo') return kidShell(peekHTML(), { title: 'Peekaboo<br><span class="bn">কুক্কু</span>', color: '#D06A00' });
@@ -312,14 +312,31 @@ function worldHTML() {
 ACT.kWorld = el => { Sfx.tap(); kidState.world = el.dataset.v; route(); };
 ACT.kWorldTap = el => { const it = WORLD[kidState.world].items[+el.dataset.i]; popAnim(el); Kid.tap('world'); Kid.reward(el); Voice.say('W:' + it[0], [[it[0] + '.', 'en-US', 0.82], [it[1] + '।', 'bn-BD', 0.82]]); };
 
-/* ---- great people ---- */
-function peopleHTML() {
-  return `<div class="kpad"><div class="ktabs">${Object.keys(PEOPLE).map(k => `<button class="ktab bn ${k === kidState.people ? 'on' : ''}" data-act="kPeople" data-v="${esc(k)}">${esc(k)}</button>`).join('')}</div>
-  ${PEOPLE[kidState.people].map((p, i) => `<div class="person"><div class="avatar" style="background:${p.c}">${p.e}</div><div class="grow"><b>${esc(p.n)}</b><div class="bn muted">${esc(p.bn)}</div>
-    <p>${esc(p.dEn)}</p><p class="bn">${esc(p.dBn)}</p><button class="hear" data-act="kPerson" data-i="${i}">🔊 Listen · <span class="bn">শোনো</span></button></div></div>`).join('')}</div>`;
+/* ---- great personalities: 15 fields × 3 ---- */
+const heroOfDay = () => { const all = PERSONALITIES.flatMap(f => f.people.map((p, i) => [f, i])); const d = Math.floor((Date.now() + 6 * 3600e3) / 864e5); return all[d % all.length]; };
+const medal = (p, c, big) => `<div class="medal ${big ? 'big' : ''}" style="--mc:${c}"><span>${p.e}</span></div>`;
+function personCard(f, p, i) {
+  return `<article class="hcard" style="--mc:${f.c}">${medal(p, f.c)}<div class="grow">
+    <b>${esc(p.n)}</b><div class="bn hc-bn">${esc(p.bn)}</div>
+    <span class="hval">⭐ ${esc(p.v)} · <span class="bn">${esc(p.vb)}</span></span>
+    <p>${esc(p.dEn)}</p><p class="bn">${esc(p.dBn)}</p>
+    <button class="hear" data-act="kPerson" data-f="${f.k}" data-i="${i}">🔊 Listen · <span class="bn">শোনো</span>${Voice.has('P:' + p.n) ? ' · 🎙️' : ''}</button></div></article>`;
 }
-ACT.kPeople = el => { Sfx.tap(); kidState.people = el.dataset.v; route(); };
-ACT.kPerson = el => { const p = PEOPLE[kidState.people][+el.dataset.i]; Kid.tap('people'); Kid.reward(el); Voice.say('P:' + p.n, [[p.n + '. ' + p.dEn, 'en-US', 0.85], [p.dBn, 'bn-BD', 0.85]]); };
+function peopleHTML() {
+  const f = PERSONALITIES.find(x => x.k === kidState.people);
+  if (f) return `<div class="kpad"><button class="hback" data-act="kPeople" data-v="">← All fields · <span class="bn">সব ক্ষেত্র</span></button>
+    <div class="hfield-h" style="--mc:${f.c}">${medal(f, f.c, true)}<div><small>Field ${PERSONALITIES.indexOf(f) + 1} of 15</small><h3>${esc(f.en)}</h3><div class="bn">${esc(f.bn)}</div></div></div>
+    ${f.people.map((p, i) => personCard(f, p, i)).join('')}
+    <div class="hnav">${PERSONALITIES.indexOf(f) > 0 ? `<button class="hback" data-act="kPeople" data-v="${PERSONALITIES[PERSONALITIES.indexOf(f) - 1].k}">← ${esc(PERSONALITIES[PERSONALITIES.indexOf(f) - 1].en.split(',')[0])}</button>` : '<span></span>'}
+      ${PERSONALITIES.indexOf(f) < 14 ? `<button class="hback" data-act="kPeople" data-v="${PERSONALITIES[PERSONALITIES.indexOf(f) + 1].k}">${esc(PERSONALITIES[PERSONALITIES.indexOf(f) + 1].en.split(',')[0])} →</button>` : ''}</div></div>`;
+  const [hf, hi] = heroOfDay(), hp = hf.people[hi];
+  return `<div class="kpad"><div class="hhead"><h3>Affaan’s World of Great Personalities</h3><div class="bn">আফফানের মহান ব্যক্তিত্বদের জগৎ</div>
+    <p>15 Fields of Excellence · 45 Inspiring Personalities</p></div>
+    <div class="hday"><small>Hero of the day · <span class="bn">আজকের অনুপ্রেরণা</span></small>${personCard(hf, hp, hi)}</div>
+    <div class="hgrid">${PERSONALITIES.map((x, n) => `<button class="hfield" style="--mc:${x.c}" data-act="kPeople" data-v="${x.k}"><span class="hn">${n + 1}</span><span class="he">${x.e}</span><b>${esc(x.en)}</b><span class="bn">${esc(x.bn)}</span><span class="hp">${x.people.map(p => p.e).join(' ')}</span></button>`).join('')}</div></div>`;
+}
+ACT.kPeople = el => { Sfx.tap(); kidState.people = el.dataset.v || null; route(); requestAnimationFrame(() => (document.querySelector('.kid .kpad') || document.body).scrollIntoView({ block: 'start' })); };
+ACT.kPerson = el => { const f = PERSONALITIES.find(x => x.k === el.dataset.f), p = f.people[+el.dataset.i]; Kid.tap('people'); Kid.reward(el); Voice.say('P:' + p.n, [[p.n + '. ' + p.dEn, 'en-US', 0.85], [p.bn + '। ' + p.dBn, 'bn-BD', 0.85]]); };
 
 /* ---- NEW: bubble pop (cause & effect + colour words, alternating English / বাংলা) ---- */
 const BUB = [['Red', 'লাল', '#FF5A5F'], ['Blue', 'নীল', '#3BA7FF'], ['Yellow', 'হলুদ', '#FFC93C'], ['Green', 'সবুজ', '#4CD07D'], ['Orange', 'কমলা', '#FF9F43'], ['Purple', 'বেগুনি', '#A86BFF'], ['Pink', 'গোলাপি', '#FF7EB6']];

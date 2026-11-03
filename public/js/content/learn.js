@@ -88,43 +88,7 @@ window.WORLD = {
   ["Sea","সাগর","🌊"],["Cloud","মেঘ","☁️"],["Flower","ফুল","🌸"],["Leaf","পাতা","🍃"]]}
 };
 
-// ---------- GREAT PEOPLE ----------
-window.PEOPLE = {
-"History · ইতিহাস": [
- {n:"Sheikh Mujibur Rahman", bn:"শেখ মুজিবুর রহমান", e:"🇧🇩", c:"#0A6847",
-  dEn:"The Father of the Nation of Bangladesh. He led our people to independence in 1971. He loved Bangladesh and its people deeply.",
-  dBn:"বাংলাদেশের জাতির পিতা। ১৯৭১ সালে তিনি আমাদের স্বাধীনতার পথ দেখান। তিনি দেশ ও মানুষকে গভীরভাবে ভালোবাসতেন।"},
- {n:"Begum Rokeya", bn:"বেগম রোকেয়া", e:"📚", c:"#8455B2",
-  dEn:"A brave writer who opened schools for girls when very few could study. She taught that education makes everyone strong.",
-  dBn:"একজন সাহসী লেখিকা, যিনি মেয়েদের জন্য স্কুল খুলেছিলেন। তিনি শিখিয়েছেন, শিক্ষাই সবাইকে শক্তিশালী করে।"},
- {n:"Ibn Sina (Avicenna)", bn:"ইবনে সিনা", e:"⚕️", c:"#1B7F8E",
-  dEn:"A great doctor and thinker from long ago. His medicine books taught the world for hundreds of years.",
-  dBn:"অনেক আগের একজন মহান চিকিৎসক ও চিন্তাবিদ। তাঁর চিকিৎসার বই শত শত বছর পৃথিবীকে শিখিয়েছে।"}],
-"Writers · সাহিত্য": [
- {n:"Rabindranath Tagore", bn:"রবীন্দ্রনাথ ঠাকুর", e:"✍️", c:"#B0632F",
-  dEn:"A world-famous poet who wrote our national anthem. He won the Nobel Prize for his beautiful poems and songs.",
-  dBn:"বিশ্বখ্যাত কবি, আমাদের জাতীয় সংগীতের রচয়িতা। সুন্দর কবিতা ও গানের জন্য তিনি নোবেল পুরস্কার পান।"},
- {n:"Kazi Nazrul Islam", bn:"কাজী নজরুল ইসলাম", e:"🎵", c:"#C0392B",
-  dEn:"Our national poet, called the Rebel Poet. His songs and poems are full of courage, love, and fairness for all.",
-  dBn:"আমাদের জাতীয় কবি, বিদ্রোহী কবি। তাঁর গান ও কবিতা সাহস, ভালোবাসা আর ন্যায়ের কথা বলে।"}],
-"Science · বিজ্ঞান": [
- {n:"Albert Einstein", bn:"আলবার্ট আইনস্টাইন", e:"🔬", c:"#4A5FA5",
-  dEn:"A scientist with big ideas about light, time, and space. He said imagination is even more important than knowledge.",
-  dBn:"আলো, সময় ও মহাকাশ নিয়ে বড় ভাবনার বিজ্ঞানী। তিনি বলতেন, কল্পনা জ্ঞানের চেয়েও গুরুত্বপূর্ণ।"},
- {n:"Neil Armstrong", bn:"নিল আর্মস্ট্রং", e:"🚀", c:"#4B4E6D",
-  dEn:"The first human to walk on the Moon in 1969. One small step for him, a giant leap for everyone.",
-  dBn:"১৯৬৯ সালে চাঁদে হাঁটা প্রথম মানুষ। তাঁর ছোট্ট এক পা ছিল মানবজাতির বিশাল অগ্রযাত্রা।"},
- {n:"Dr. Muhammad Yunus", bn:"ড. মুহাম্মদ ইউনূস", e:"🕊️", c:"#0A6847",
-  dEn:"A Bangladeshi Nobel Peace Prize winner. He helped poor families with tiny loans so they could build better lives.",
-  dBn:"নোবেল শান্তি পুরস্কারজয়ী বাংলাদেশি। ক্ষুদ্রঋণ দিয়ে তিনি গরিব পরিবারগুলোকে ভালো জীবন গড়তে সাহায্য করেন।"}],
-"Sports · খেলা": [
- {n:"Shakib Al Hasan", bn:"সাকিব আল হাসান", e:"🏏", c:"#0A6847",
-  dEn:"One of the best cricket all-rounders in the world, from Bangladesh. He bats and bowls brilliantly.",
-  dBn:"বাংলাদেশের গর্ব, বিশ্বের সেরা অলরাউন্ডারদের একজন। ব্যাট ও বলে সমান পারদর্শী।"},
- {n:"Lionel Messi", bn:"লিওনেল মেসি", e:"⚽", c:"#75AADB",
-  dEn:"A football magician from Argentina who won the World Cup. He shows that practice and love for the game work wonders.",
-  dBn:"আর্জেন্টিনার ফুটবল জাদুকর, বিশ্বকাপজয়ী। অনুশীলন আর খেলার প্রতি ভালোবাসাই তাঁর জাদু।"}]
-};
+// GREAT PEOPLE moved to js/content/personalities.js (15 fields × 3 = 45)
 
 // ---------- STORIES (bilingual, illustrated pages) ----------
 window.STORIES = [

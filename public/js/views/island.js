@@ -229,6 +229,7 @@ async function voiceGroups() {
   const animals = new Map(); Object.values(WORLD).forEach(w => w.items.forEach(it => animals.set(it[0], it[1]))); PK_ANIMALS.forEach(a => animals.set(a[0], a[1]));
   G.push(['Animals & nature', 'প্রাণী ও প্রকৃতি', [...animals].map(([en, bn]) => ['W:' + en, `${en} · ${bn}`])]);
   STORIES.forEach(st => G.push([`Story: ${st.tEn}`, st.tBn, st.pages.flatMap((p, i) => [[`ST:${st.id}:${i}:en`, `Page ${i + 1} (English): ${p.en}`], [`ST:${st.id}:${i}:bn`, `পৃষ্ঠা ${bnNum(i + 1)}: ${p.bn}`]])]));
+  PERSONALITIES.forEach((f, n) => G.push([`Great Personalities ${n + 1}: ${f.en}`, f.bn, f.people.map(p => ['P:' + p.n, `${p.n} — “${p.dEn}”`])]));
   if (words.length) G.push(['His words', 'তার শব্দ', words.map(w => ['WD:' + w.word, `“${w.word}”`])]);
   return G;
 }

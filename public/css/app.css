@@ -1160,3 +1160,30 @@ body.winddown .spot .sp-ic,body.winddown .ktile{animation-duration:7s}
 #film .fm-snd{position:absolute;left:16px;top:calc(16px + env(safe-area-inset-top));width:42px;height:42px;border-radius:50%;border:0;background:rgba(0,0,0,.3);color:#fff;font-size:18px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);cursor:pointer}
 #film .fm-bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.12)}
 #film .fm-bar i{display:block;height:100%;background:linear-gradient(90deg,#9BD27A,#F2C14E);transform-origin:0 50%;transform:scaleX(0)}
+
+/* ---------- v7.1 Great Personalities (15 fields × 3) ---------- */
+.hhead{text-align:center;margin:2px 0 14px}.hhead h3{font-family:var(--display,Georgia,serif);font-size:24px;line-height:1.15;color:#5A3E00}
+.hhead .bn{font-size:16px;color:#7A5A10;margin-top:2px}.hhead p{margin-top:6px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9A7A30}
+.hday{margin-bottom:16px}.hday>small{display:block;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#9A6A0B;margin:0 0 6px 6px}
+.hgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.hfield{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px 12px 12px;border:0;border-radius:22px;cursor:pointer;
+  background:linear-gradient(160deg,#fff 0%,color-mix(in srgb,var(--mc) 12%,#fff) 100%);box-shadow:0 5px 0 color-mix(in srgb,var(--mc) 35%,#E8DCC4),0 8px 18px rgba(60,40,10,.08);transition:transform .15s}
+.hfield:active{transform:translateY(3px);box-shadow:0 2px 0 color-mix(in srgb,var(--mc) 35%,#E8DCC4)}
+.hfield .hn{position:absolute;top:10px;right:12px;font:700 12px/1 var(--mono,monospace);color:var(--mc);opacity:.75}
+.hfield .he{font-size:34px;line-height:1;margin-bottom:4px}.hfield b{font-size:14px;line-height:1.25;color:#2B2620}
+.hfield .bn{font-size:12.5px;line-height:1.3;color:#6A5E50}.hfield .hp{margin-top:6px;font-size:17px;letter-spacing:2px}
+.medal{flex:0 0 66px;width:66px;height:66px;border-radius:50%;display:grid;place-items:center;font-size:30px;position:relative;
+  background:radial-gradient(circle at 35% 30%,#fff 0%,color-mix(in srgb,var(--mc) 22%,#fff) 60%,color-mix(in srgb,var(--mc) 45%,#fff) 100%);
+  box-shadow:inset 0 0 0 3px #fff,0 0 0 3px color-mix(in srgb,var(--mc) 70%,#E0A526),0 6px 14px rgba(60,40,10,.18)}
+.medal::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px dashed color-mix(in srgb,var(--mc) 45%,transparent);opacity:.6}
+.medal.big{flex-basis:76px;width:76px;height:76px;font-size:36px}
+.hcard{display:flex;gap:16px;background:#fff;border-radius:24px;padding:18px 16px;margin-bottom:13px;box-shadow:0 6px 0 color-mix(in srgb,var(--mc) 25%,#E8DCC4);border-top:4px solid var(--mc)}
+.hcard b{font-size:19px;font-weight:800;line-height:1.2}.hcard .hc-bn{font-size:16px;color:#5A5148;margin-top:2px}
+.hcard p{font-size:15px;line-height:1.5;margin-top:7px;font-weight:600}.hcard p.bn{color:#3A4666}
+.hval{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:99px;font-size:13px;font-weight:800;color:var(--mc);background:color-mix(in srgb,var(--mc) 12%,#fff)}
+.hfield-h{display:flex;align-items:center;gap:16px;margin:10px 0 16px;padding:16px;border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--mc) 16%,#fff),#fff)}
+.hfield-h small{font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mc)}.hfield-h h3{font-family:var(--display,Georgia,serif);font-size:21px;line-height:1.2;margin-top:2px}
+.hfield-h .bn{font-size:15px;color:#5A5148;margin-top:3px}
+.hback{border:0;background:#fff;border-radius:99px;padding:10px 16px;font-weight:800;font-size:14px;color:#5A3E00;box-shadow:0 3px 0 #E8DCC4;cursor:pointer}
+.hnav{display:flex;justify-content:space-between;gap:10px;margin-top:6px}
+@media (max-width:420px){.hcard{flex-direction:column;align-items:flex-start;gap:12px}.hgrid{grid-template-columns:1fr 1fr}}
