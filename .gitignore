@@ -1,0 +1,10 @@
+node_modules/
+.vercel/
+.DS_Store
+*.log
+# local secrets / scratch — never commit service keys
+.env
+.env.*
+supabase/.temp/
+test-results/
+*.zip

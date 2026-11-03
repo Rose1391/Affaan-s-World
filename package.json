@@ -1,0 +1,11 @@
+{
+  "name": "affaans-world",
+  "version": "5.0.0",
+  "private": true,
+  "description": "Affaan's World v5 — private offline-first parent companion PWA (vanilla HTML/CSS/JS).",
+  "scripts": {
+    "start": "npx serve public -l 3000",
+    "dev": "npx serve public -l 3000"
+  },
+  "license": "UNLICENSED"
+}
