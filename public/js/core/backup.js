@@ -7,7 +7,7 @@
    README.txt */
 const Backup = (() => {
   const extOf = mime => ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/heic': 'heic', 'image/webp': 'webp', 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm' }[mime] || (mime || 'bin').split('/')[1] || 'bin');
-  async function exportZip(say = () => { }) {
+  async function exportZip(say = () => { }, password = '') {
     say('Collecting records…');
     const records = await DB.allRecords();
     const entries = [];
@@ -21,16 +21,26 @@ const Backup = (() => {
       if (b.thumb) { m.thumb = `media/${r.id}.thumb.jpg`; entries.push({ name: m.thumb, data: b.thumb }); }
       manifest.media.push(m);
     }
+    manifest.voices = [];
+    for (const r of records.filter(r => r.kind === 'voice' && !r.deleted)) {
+      const b = await DB.blob.get(r.id); if (!b?.audio) continue;
+      const path = `voice/${Voice.safe(r.data.key)}.${Voice.ext(b.audio.type || r.data.mime)}`; entries.push({ name: path, data: b.audio }); manifest.voices.push({ id: r.id, path, mime: b.audio.type || r.data.mime });
+    }
     entries.unshift({ name: 'manifest.json', data: JSON.stringify(manifest) },
       { name: 'README.txt', data: `Affaan's World backup — ${new Date().toLocaleString()}\n${records.filter(r => !r.deleted).length} records, ${manifest.media.length} photos/videos.\nRestore: open the app → Settings → Backup → Restore… and pick this ZIP.\nPhotos are in /media (originals are the *.original.* files).\n` });
-    const zip = await Zip.create(entries, (i, n) => say(`Packing ${i}/${n}…`));
-    const name = `affaans-world-backup-${todayISO()}.zip`;
+    let zip = await Zip.create(entries, (i, n) => say(`Packing ${i}/${n}…`));
+    let name = `affaans-world-backup-${todayISO()}.zip`;
+    if (password) { zip = await CryptoBox.encrypt(zip, password, f => say(`Encrypting ${Math.round(f * 100)}%…`)); name = `affaans-world-backup-${todayISO()}.affaan`; }
     downloadBlob(zip, name);
     await DB.meta.set('lastBackup', new Date().toISOString());
-    say(`✓ ${name} — ${fmtBytes(zip.size)}. Save it somewhere safe (computer / Drive).`);
+    say(`✓ ${name} — ${fmtBytes(zip.size)}${password ? ' · 🔒 password-protected' : ''}. Save it somewhere safe (computer / Drive).`);
     return { size: zip.size, name, records: manifest.records.length, media: manifest.media.length };
   }
-  async function restoreZip(file, say = () => { }) {
+  async function restoreZip(file, say = () => { }, password = '') {
+    if (await CryptoBox.isEncrypted(file)) {
+      if (!password) { const e = new Error('This backup is password-protected'); e.needsPassword = true; throw e; }
+      say('Decrypting…'); file = await CryptoBox.decrypt(file, password, f => say(`Decrypting ${Math.round(f * 100)}%…`));
+    }
     say('Reading ZIP…');
     const z = await Zip.read(file);
     const mf = z.get('manifest.json'); if (!mf) throw new Error('This is not an Affaan\'s World backup (no manifest.json)');
@@ -46,9 +56,10 @@ const Backup = (() => {
       await DB.blob.put({ ...(existing || {}), id: md.id, type: md.type, mime: md.mime, original: original || existing?.original || null, compressed: compressed || existing?.compressed || null, thumb: thumb || existing?.thumb || null, uploaded: existing?.uploaded || false });
       Media.forget(md.id); photos++;
     }
+    for (const v of m.voices || []) { const e = z.get(v.path); if (!e || await DB.blob.get(v.id)) continue; await DB.blob.put({ id: v.id, audio: new Blob([await (await e.blob()).arrayBuffer()], { type: v.mime }), mime: v.mime, type: 'voice', uploaded: false }); }
     say('Merging records…'); let records = 0;
     for (const r of m.records || []) if (await DB.applyIncoming(r, true)) records++;
-    Bus.emit('change', null);
+    Bus.emit('change', null); await Voice.load();
     say(`✓ Restored ${records} records and ${photos} photos/videos from ${file.name}`);
     return { records, photos };
   }

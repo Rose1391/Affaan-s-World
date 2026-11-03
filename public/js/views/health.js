@@ -21,7 +21,9 @@ async function vaccinesHTML() {
       <span class="grow"><b>${esc(v.en)}</b> <span class="bn muted">${esc(v.bn)}</span><span class="sm muted">${esc(v.at)} · due ${fmtDate(due)} · ${esc(v.prevents)}</span></span><span class="vst">${lab}</span></button>`;
   };
   const groups = ['epi', 'campaign'].concat(showOptional ? ['optional'] : []);
-  return `
+  const toggle = `<div class="vtoggle" style="margin:8px 0"><button class="${vxView === 'passport' ? 'on' : ''}" data-act="vxView" data-v="passport">🛂 Passport</button><button class="${vxView === 'list' ? 'on' : ''}" data-act="vxView" data-v="list">☰ List</button></div>`;
+  if (vxView === 'passport') return toggle + passportHTML(done, custom);
+  return toggle + `
   <div class="stats3"><div><b>${epiDone}/${epi.length}</b><span>EPI doses recorded</span></div><div><b>${EPI.filter(v => v.group === 'epi' && !done[v.id]?.given && vaccineDue(v) < t).length}</b><span>EPI not recorded (past due)</span></div><div><b>${(() => { const n = EPI.filter(v => v.group !== 'optional' && !done[v.id]?.given && vaccineDue(v) >= t).sort((a, b) => vaccineDue(a).localeCompare(vaccineDue(b)))[0]; return n ? fmtDate(vaccineDue(n)) : '—'; })()}</b><span>next due</span></div></div>
   <p class="muted sm">Copy the dates from his EPI card. Tap a dose to record it — the date defaults to the due date. <button class="linkbtn" data-act="vaxBulk">Mark all past EPI doses as given…</button></p>
   ${groups.map(g => `<h4 class="subh">${EPI_GROUPS[g].en} <span class="bn">${EPI_GROUPS[g].bn}</span></h4><div class="list">${EPI.filter(v => v.group === g).map(row).join('')}</div>`).join('')}
@@ -30,6 +32,27 @@ async function vaccinesHTML() {
   <div class="list">${custom.map(c => `<button class="vrow ${c.given ? 'done' : 'up'}" data-act="vaxCustom" data-id="${c.id}"><span class="vdot">${c.given ? icon('check') : ''}</span><span class="grow"><b>${esc(c.name)}</b><span class="sm muted">${c.given ? 'Given ' + fmtDate(c.given) : 'Due ' + fmtDate(c.due)}${c.place ? ' · ' + esc(c.place) : ''}</span></span></button>`).join('')}</div>
   <button class="ghostadd" data-act="vaxCustom">+ Add another vaccine · <span class="bn">অন্য টিকা যোগ করুন</span></button>
   <p class="muted sm">Schedule: Bangladesh EPI (DGHS). Campaign dates are approximate. Not medical advice — follow the EPI card and your paediatrician.</p>`;
+}
+let vxView = 'passport';
+ACT.vxView = el => { vxView = el.dataset.v; route(); };
+const shortVx = v => v.en.split(' (')[0].replace('Pentavalent', 'Penta').replace('Vitamin A capsule', 'Vit A').replace('Deworming', 'Deworm').replace(' (polio drops)', '');
+// the EPI card as a passport: given doses are inked stamps, upcoming ones faint outlines
+function passportHTML(done, custom) {
+  const t = todayISO(), R = (() => { let h = 11; return () => (h = (h * 9301 + 49297) % 233280) / 233280; })();
+  const INK = { epi: '#C0392B', campaign: '#2F7FB8', optional: '#6B3FB0' };
+  const stamp = v => { const r = done[v.id], due = vaccineDue(v), rot = ((R() - .5) * 22).toFixed(1);
+    const st = r?.given ? 'given' : due < t ? (v.group === 'epi' ? 'missing' : 'past') : 'due';
+    return `<button class="stamp ${st}" style="--sink:${INK[v.group]};--rot:${rot}deg" data-act="vaccine" data-id="${v.id}" aria-label="${esc(v.en)}">
+      <span class="st-ring"><b>${esc(shortVx(v))}</b><small>${st === 'given' ? fmtDate(r.given).replace(/(\d+) (\w+) 20(\d\d)/, '$1 $2 ’$3') : st === 'missing' ? 'copy from card' : 'due ' + fmtDate(due).replace(/ \d{4}$/, '')}</small>${st === 'given' ? '<i>✓</i>' : ''}</span></button>`; };
+  const given = Object.values(done).filter(v => v.given).length;
+  return `<div class="passport">
+    <div class="pp-head"><div class="pp-emb">🇧🇩</div><div class="grow"><span class="eyebrow">Vaccination passport · টিকা কার্ড</span><b>${esc(Child.name)}</b><span class="sm">${esc(Child.nameBn || '')} · born ${fmtDate(Child.birth)}</span></div><div class="pp-count"><b>${given}</b><small>stamps</small></div></div>
+    ${['epi', 'campaign', 'optional'].map(g => { const list = EPI.filter(v => v.group === g && (g !== 'optional' || done[v.id]?.given || showOptional)); if (!list.length) return '';
+      return `<div class="pp-page"><h5>${EPI_GROUPS[g].en} <span class="bn">${EPI_GROUPS[g].bn}</span></h5><div class="stamps">${list.map(stamp).join('')}</div></div>`; }).join('')}
+    ${custom.length ? `<div class="pp-page"><h5>Other vaccines <span class="bn">অন্যান্য</span></h5><div class="stamps">${custom.map(c => `<button class="stamp ${c.given ? 'given' : 'due'}" style="--sink:#1E8C86;--rot:${((R() - .5) * 22).toFixed(1)}deg" data-act="vaxCustom" data-id="${c.id}"><span class="st-ring"><b>${esc(c.name.slice(0, 16))}</b><small>${c.given ? fmtDate(c.given) : 'due ' + fmtDate(c.due)}</small>${c.given ? '<i>✓</i>' : ''}</span></button>`).join('')}</div></div>` : ''}
+    <div class="pp-foot"><label class="switch sm"><input type="checkbox" data-change="toggleOptional" ${showOptional ? 'checked' : ''}><span></span> Show optional vaccines</label>
+      <button class="linkbtn" data-act="vaxCustom">+ Other vaccine</button><button class="linkbtn" data-act="vaxBulk">Mark past EPI doses as given…</button></div>
+  </div><p class="muted sm">Schedule: Bangladesh EPI (DGHS). Campaign dates are approximate. Follow the EPI card and your paediatrician.</p>`;
 }
 ACT.toggleOptional = el => { showOptional = el.checked; route(); };
 ACT.vaccine = async el => {

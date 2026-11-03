@@ -235,3 +235,10 @@ do $$ begin
     alter publication supabase_realtime add table public.records;
   end if;
 end $$;
+
+-- ---------- v7: the same private bucket also holds family voice clips and 7-day doctor-share files ----------
+update storage.buckets
+   set allowed_mime_types = array['image/jpeg','audio/webm','audio/mp4','audio/ogg','audio/mpeg','audio/aac','text/plain'],
+       file_size_limit = 3145728,
+       public = false
+ where id = 'photos';

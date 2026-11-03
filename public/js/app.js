@@ -214,6 +214,11 @@ Views.home = async () => {
   const lastWord = words.filter(x => x.type !== 'skill').sort((x, y) => y.date.localeCompare(x.date))[0];
   const msMonth = msAll.filter(m => m.achieved.startsWith(T.iso.slice(0, 7))).length, photosWeek = items.filter(i => i.date >= wk).length;
   const [first, ...rest] = esc(Child.name).split(' ');
+  const gd = await Garden.data();
+  const otd = onThisDay(items, T.iso);
+  const lastBackup = await DB.meta.get('lastBackup', null), recN = (await DB.allRecords()).filter(r => !r.deleted && !['kv', 'settings'].includes(r.kind)).length;
+  const backupDays = lastBackup ? daysBetween(new Date(lastBackup), new Date()) : null;
+  const needBackup = recN >= 10 && (backupDays === null || backupDays > 30);
   const SYMS = [['play', 'play', 'Play'], ['dev', 'dev', 'Growth'], ['health', 'health', 'Health'], ['calendar', 'calendar', 'Calendar'], ['gallery', 'gallery', 'Gallery'], ['reports', 'reports', 'Reports']];
   const season = T.bd.season, sp = T.special;
   let parts = ''; for (let i = 0; i < 22; i++) parts += `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(-Math.random() * 12).toFixed(1)}s;animation-duration:${(9 + Math.random() * 7).toFixed(1)}s"></i>`;
@@ -227,28 +232,29 @@ Views.home = async () => {
     ['🌱', msAll.length ? `${msMonth} ${msMonth === 1 ? 'milestone' : 'milestones'} this month · next: <b>${esc(nm ? nm.item.en.split(',')[0].slice(0, 60) : 'all recorded')}</b>` : `Start the <b>${band ? band.en : ''}</b> milestone checklist`, band ? 'dev/milestones/' + band.id : 'dev'],
     ['💉', nv.overdue.length ? `<b>${nv.overdue.length} EPI ${nv.overdue.length === 1 ? 'dose' : 'doses'}</b> to copy from his card` : nextEv ? `Next: <b>${esc(nextEv.title)}</b> · ${fmtDate(nextEv.date)}` : nv.next ? `Next vaccine <b>${esc(nv.next.v.en)}</b> · ${fmtDate(nv.next.due)}` : 'Health records up to date', nv.overdue.length ? 'health/vaccines' : 'calendar'],
     ['📸', `${photosWeek} ${photosWeek === 1 ? 'photo' : 'photos'} this week${lastWord ? ` · newest word <b>“${esc(lastWord.word)}”</b>` : ''}${weekMin ? ` · played ${weekMin} min` : ''}`, 'gallery']];
+  if (needBackup) brief.unshift(['💾', backupDays === null ? '<b>No backup yet</b> — keep a copy of his records safe' : `<b>Last backup ${backupDays} days ago</b> — time for a fresh one`, 'settings']);
   return `
-  <header class="lh sky-${T.phase} season-${season.k}${sp ? ' sp-' + sp.k : ''} ${wxClass}" id="lh">
-    <div class="lh-photo" data-depth="-14">${eye.replace('<img', '<img class="lh-bgimg"')}</div>
-    <div class="lh-sky"></div><div class="lh-stars">${stars}</div>
-    <div class="lh-clouds" data-depth="22"><i class="cl c1"></i><i class="cl c2"></i><i class="cl c3"></i></div>
-    <div class="lh-season">${parts}</div><div class="lh-wx"></div>
+  <header class="gh sky-${T.phase} season-${season.k}${sp ? ' sp-' + sp.k : ''} ${wxClass}" id="lh">
+    <div class="gh-sky"></div><div class="lh-wx"></div>
     <div class="h-top lh-top"><span class="lh-live"><i class="sdot live"></i><span data-live="clock">${Cal.clock()}</span></span><span class="grow"></span>${topActions()}</div>
-    <div class="lh-stage" data-depth="9">
-      <i class="lh-m lh-m2"></i><i class="lh-m lh-m1"></i>
-      <div class="lh-orbit">${SYMS.map(([to, ob, lab], i) => `<button class="lh-sym" style="--a:${i * 60}deg" data-act="go" data-to="${to}" aria-label="${lab}"><span>${icon(ob)}</span></button>`).join('')}</div>
-      <div class="lh-eye${nextEv && daysBetween(new Date(), parseDate(nextEv.date)) <= 3 ? ' warm' : ''}">${eye}<i class="lh-glint"></i></div>
-    </div>
-    <div class="lh-txt">
-      ${sp ? `<div class="lh-special">✨ ${esc(sp.en)} · <span class="bn">${sp.bn}</span></div>` : ''}
-      <h1 class="engraved" aria-label="${esc(Child.name)}">${first}<span class="sp"></span>${rest.join(' ')}</h1>
+    <div class="gh-txt">
+      ${sp ? `<div class="lh-special">${sp.k === 'birthday' ? '🎂' : '✨'} ${esc(sp.en)} · <span class="bn">${sp.bn}</span></div>` : ''}
+      <h1 class="gh-name">${first} <em>${rest.join(' ')}</em></h1>
       <div class="lh-bn bn">${esc(Child.nameBn || '')}</div>
       <div class="lh-greet" data-type="${esc(gr[0])} — ${esc(T.en)}"><span class="tw"></span><i class="caret"></i></div>
       <div class="lh-dates"><span class="bn">${bnNum(T.bd.d)} ${T.bd.month} ${bnNum(T.bd.y)} · ${season.bn}</span>${T.hj ? `<span class="mono">${T.hj.d} ${esc(T.hj.month)} ${T.hj.y} AH</span>` : ''}</div>
       <div class="lh-chips"><span class="lh-chip" id="wxChip">${wd ? `${wx[1]} ${wd.hi}°/${wd.lo}° · ${wx[0]}` : '☁️ Dhaka weather'}</span><span class="lh-chip age"><span data-live="age">${ageText(a)}</span></span></div>
     </div>
-    <i class="lh-vine"></i>
+    <div class="gh-scene">${Garden.svg(gd)}</div>
   </header>
+  <div class="gh-legend">
+    <button data-act="go" data-to="dev/milestones"><b>🌸 ${msAll.length}</b><span>milestones</span></button>
+    <button data-act="go" data-to="dev/words"><b>🍃 ${nW}</b><span>words</span></button>
+    <button data-act="go" data-to="gallery"><b>🏮 ${items.length}</b><span>photos</span></button>
+    <button data-act="go" data-to="health/vaccines"><b>🌱 ${epiDone}</b><span>vaccines</span></button>
+    <button data-act="go" data-to="dev/growth"><b>📏 ${gh ? gh.height : '—'}</b><span>cm tall</span></button>
+    <button data-act="go" data-to="play"><b>🦋 ${Math.min(12, Math.floor(gd.stars / 8) + (gd.stars ? 1 : 0))}</b><span>butterflies</span></button>
+  </div>
 
   <div class="pad home-body">
     <div class="brief card">${brief.map(([i, h, to]) => `<button class="br" data-act="go" data-to="${to}"><span>${i}</span><span class="grow">${h}</span>${icon('arrow')}</button>`).join('')}</div>
@@ -283,6 +289,9 @@ Views.home = async () => {
     </div>
     ${upcoming.length ? `<div class="hz card">${upcoming.map(i => { const n = daysBetween(new Date(), parseDate(i.date)); return `<button class="hz-row" ${i.act ? `data-act="${i.act}" data-id="${esc(i.id)}"` : i.go ? `data-act="go" data-to="${i.go}"` : 'data-act="go" data-to="calendar"'}><i style="background:${i.color}"></i><span class="d mono">${fmtDate(i.date).replace(/ \d{4}$/, '')}</span><span class="grow"><b>${esc(i.title)}</b></span><span class="when">${n === 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + 'd'}</span></button>`; }).join('')}</div>` : ''}
 
+    ${otd.length ? `${shead('🌼', 'On this day', 'এই দিনে')}
+    <div class="otd">${otd.map(o => `<button class="otd-card" data-act="viewPhoto" data-id="${esc(o.photoId)}">${Media.img(o.photoId, 'full')}<span><b>${o.label}</b><small>${fmtDate(o.date)} · ${ageShort(Child.birth, o.date)}</small></span></button>`).join('')}</div>` : ''}
+
     ${ev.length ? `${shead('🕰️', 'Recently', 'সাম্প্রতিক', '<button class="linkbtn" data-act="homeTimeline">All</button>')}
     <div class="card tlstrip">${ev.map(e => `<button class="tlrow" ${e.go ? `data-act="go" data-to="${e.go}"` : e.photo ? `data-act="viewPhoto" data-id="${esc(e.photo)}"` : ''}><span class="tagdot" style="background:${e.color}"></span><span class="d">${fmtDate(e.date).replace(/ \d{4}$/, '')}</span><span class="grow"><b>${esc(e.en)}</b><span class="s">${ageShort(Child.birth, e.date)}</span></span></button>`).join('')}</div>` : ''}
 
@@ -298,12 +307,23 @@ Views.home = async () => {
       <p class="bn" style="margin-top:6px;font-size:12.5px">${esc(Child.nameBn || '')} — ${ageTextBn(a)}। ${season.bn} ঋতু।</p>
     </div>
 
-    <footer class="medallion"><i class="med-m"></i><b>Affaan's <em>World</em></b><span class="bn">আফফানের পৃথিবী</span>
+    <footer class="medallion"><i class="med-m seal"></i><b>Affaan's <em>World</em></b><span class="bn">আফফানের পৃথিবী</span>
       <span class="legend"><i style="background:#6FD48F"></i>done <i style="background:#F0B64A"></i>soon <i style="background:#F58B7A"></i>health <i style="background:#7AB4F5"></i>growth</span>
-      <small class="mono">v6 · ${(await DB.meta.get('lastSync')) ? 'synced ' + new Date(await DB.meta.get('lastSync')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'on this device'}</small></footer>
+      <small class="mono">v7 · ${(await DB.meta.get('lastSync')) ? 'synced ' + new Date(await DB.meta.get('lastSync')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'on this device'}</small></footer>
   </div>`;
 };
+// memories from the same day 1 month, 6 months and each year ago (± a few days), plus then-and-now
+function onThisDay(items, todayIso) {
+  const out = [], used = new Set(), t = parseDate(todayIso), photos = items.filter(i => i.type === 'photo' && i.date);
+  const near = (target, win) => { let best = null, bd = 1e9; for (const p of photos) { if (used.has(p.photoId)) continue; const d = Math.abs(daysBetween(parseDate(p.date), target)); if (d <= win && d < bd) { best = p; bd = d; } } return best; };
+  const age = ageOn(Child.birth).y;
+  for (let y = age; y >= 1; y--) { const p = near(addMonths(t, -12 * y), 4); if (p) { used.add(p.photoId); out.push({ ...p, label: `${y} ${y === 1 ? 'year' : 'years'} ago` }); } }
+  for (const [m, l] of [[6, '6 months ago'], [1, '1 month ago']]) { const p = near(addMonths(t, -m), 3); if (p) { used.add(p.photoId); out.push({ ...p, label: l }); } }
+  if (out.length && photos[0] && !used.has(photos[0].photoId)) out.unshift({ ...photos[0], label: 'Now · এখন' });
+  return out.slice(0, 4);
+}
 Views.home.after = () => {
+  Garden.hydrate($('#lh'));
   // typed greeting
   const g = $('.lh-greet'); if (g) { const full = g.dataset.type, tw = g.querySelector('.tw'); let i = 0; if (Motion.still()) tw.textContent = full; else { const iv = setInterval(() => { tw.textContent = full.slice(0, ++i); if (i >= full.length) clearInterval(iv); }, 38); } }
   // live age to the second (time since midnight on his birth date, Dhaka)
@@ -316,7 +336,7 @@ Views.home.after = () => {
     const layers = $$('[data-depth]', lh);
     const move = (x, y) => layers.forEach(l => l.style.transform = `translate3d(${(x * +l.dataset.depth).toFixed(1)}px,${(y * +l.dataset.depth * 0.6).toFixed(1)}px,0)`);
     lh.addEventListener('pointermove', e => { const r = lh.getBoundingClientRect(); move((e.clientX - r.left) / r.width - .5, (e.clientY - r.top) / r.height - .5);
-      const eye = $('.lh-eye', lh), er = eye.getBoundingClientRect(); eye.style.setProperty('--gx', ((e.clientX - er.left) / er.width * 100).toFixed(0) + '%'); eye.style.setProperty('--gy', ((e.clientY - er.top) / er.height * 100).toFixed(0) + '%'); });
+    });
     lh.addEventListener('pointerleave', () => move(0, 0));
   }
   // fresh weather (cached copy already shown)
@@ -400,7 +420,8 @@ Views.settings = async () => {
     </section>
 
     <section class="panel"><h3>Appearance · <span class="bn">চেহারা</span></h3>
-      ${F.select('theme', 'Theme', 'থিম', [['emerald', 'Emerald & Gold (night)'], ['ivory', 'Ivory & Gold (day)'], ['auto', 'Follow phone setting']], await DB.meta.get('theme', 'emerald')).replace('<select', '<select data-change="setTheme"')}
+      ${F.row(F.select('theme', 'Theme', 'থিম', [['garden', 'Garden · day'], ['emerald', 'Night garden'], ['auto', 'Follow phone setting']], await DB.meta.get('theme', 'garden')).replace('<select', '<select data-change="setTheme"'),
+        F.select('textsize', 'Text size', 'লেখার আকার', [['1', 'Normal'], ['1.12', 'Large'], ['1.25', 'Extra large']], await DB.meta.get('textsize', '1')).replace('<select', '<select data-change="setTextSize"'))}
       <label class="switch sm"><input type="checkbox" data-change="setIntro" ${(await DB.meta.get('intro', true)) ? 'checked' : ''}><span></span> Opening show when the app opens</label>
     </section>
 
@@ -444,9 +465,11 @@ ACT.invite = async b => { const e = val(new FormData(b.closest('form')), 'invite
 ACT.cancelInvite = async () => { try { await Sync.cancelInvite(); route(); } catch (x) { toast(x.message, 'err'); } };
 function applyTheme(t) {
   const dark = t === 'emerald' || (t === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.theme = dark ? 'emerald' : 'ivory';
-  $('meta[name=theme-color]')?.setAttribute('content', dark ? '#061A15' : '#0A4A37');
+  document.documentElement.dataset.theme = dark ? 'emerald' : 'garden';
+  $('meta[name=theme-color]')?.setAttribute('content', dark ? '#071A14' : '#FFF8EC');
 }
+const applyTextSize = z => document.documentElement.style.setProperty('--zoom', z || 1);
+ACT.setTextSize = async el => { await DB.meta.set('textsize', el.value); applyTextSize(el.value); };
 ACT.setTheme = async el => { await DB.meta.set('theme', el.value); applyTheme(el.value); };
 ACT.setIntro = async el => { await DB.meta.set('intro', el.checked); toast(el.checked ? 'Opening show on' : 'Opening show off'); };
 ACT.setLockAfter = async el => { await DB.meta.set('lockAfter', Number(el.value)); toast('Saved'); };
@@ -460,11 +483,26 @@ ACT.eraseDevice = async () => {
   if (prompt('Type ERASE to confirm') !== 'ERASE') return;
   await DB.wipe(); localStorage.clear(); location.replace('./');
 };
-ACT.backupNow = async () => { const m = $('#backupMsg'); try { await Backup.exportZip(t => m.textContent = t); } catch (e) { m.textContent = 'Backup failed: ' + e.message; } };
+ACT.backupNow = () => Sheet.open({
+  title: 'Backup now · <span class="bn">ব্যাকআপ</span>',
+  body: `<p class="muted sm">One file with every record, photo, video and family voice. Add a password so his medical records stay private if the file is ever shared or lost.</p>
+    ${F.row(F.text('pw', 'Password (recommended)', 'পাসওয়ার্ড', '', 'type="password" autocomplete="new-password"'), F.text('pw2', 'Repeat password', 'আবার', '', 'type="password" autocomplete="new-password"'))}
+    <p class="muted sm">⚠️ Without the password the file cannot be opened — not even by us. Write it down somewhere safe.</p>`,
+  saveLabel: 'Create backup', saved: 'Backup ready',
+  save: async fd => {
+    const pw = val(fd, 'pw'); if (pw !== val(fd, 'pw2')) throw new Error('The passwords do not match'); if (pw && pw.length < 6) throw new Error('Use at least 6 characters');
+    const btn = $('#sheet [type=submit]'); await Backup.exportZip(t => { btn.textContent = t.slice(0, 28); const m = $('#backupMsg'); if (m) m.textContent = t; }, pw);
+  }
+});
 ACT.restoreZip = async el => {
   const f = el.files[0]; el.value = ''; if (!f) return; const m = $('#backupMsg');
   if (!confirm(`Restore from ${f.name}? Records are merged — for each item, the most recently edited version wins.`)) return;
-  try { const r = await Backup.restoreZip(f, t => m.textContent = t); toast(`Restored ${r.records} records, ${r.photos} photos`); await Child.load(); route(); } catch (e) { m.textContent = 'Restore failed: ' + e.message; }
+  const run = async pw => { const r = await Backup.restoreZip(f, t => m.textContent = t, pw); toast(`Restored ${r.records} records, ${r.photos} photos`); await Child.load(); route(); };
+  try { await run(''); } catch (e) {
+    if (!e.needsPassword) { m.textContent = 'Restore failed: ' + e.message; return; }
+    Sheet.open({ title: '🔒 Password-protected backup', body: F.text('pw', 'Backup password', 'পাসওয়ার্ড', '', 'type="password" autocomplete="current-password"'), saveLabel: 'Unlock & restore', saved: 'Restored',
+      save: async fd => { await run(val(fd, 'pw')); } });
+  }
 };
 
 /* ---------- one-time migration of v4 data (same domain only) ---------- */
@@ -497,7 +535,8 @@ async function boot() {
     .map(([to, ic, en, bn]) => `<button data-act="go" data-to="${to}" style="--nc:${THEMES[to].nc};--ns:${THEMES[to].nc}1C"><span class="nwrap">${icon(ic)}</span><span>${en}</span><span class="bn">${bn}</span></button>`).join('');
   $('#fab').innerHTML = icon('plus');
   Motion.installArt();
-  applyTheme(await DB.meta.get('theme', 'emerald'));
+  const th = await DB.meta.get('theme', 'garden'); applyTheme(th === 'ivory' ? 'garden' : th); applyTextSize(await DB.meta.get('textsize', '1'));
+  await Voice.load();
   await Motion.intro();
   Lock.start(async () => { await migrateV4(); route(); });
   Weather.get().catch(() => { });

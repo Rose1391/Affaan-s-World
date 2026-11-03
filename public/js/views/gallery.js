@@ -70,11 +70,11 @@ ACT.viewPhoto = async el => {
   Sheet.open({
     title: `${fmtDate(it.date)} <span class="muted sm">${it.date ? ageShort(Child.birth, it.date) : ''}</span>`,
     body: `<div class="viewer">${media}</div>
-      ${isMedia ? `${F.row(F.date('date', 'Date', 'তারিখ', m.date), F.text('tags', 'Tags', 'ট্যাগ', (m.tags || []).join(', ')))}${F.text('caption', 'Caption', 'ক্যাপশন', m.caption || '')}${F.select('milestoneId', 'Linked milestone', 'মাইলফলক', await milestoneOptions(), m.milestoneId || '')}`
+      ${isMedia ? `${F.row(F.date('date', 'Date', 'তারিখ', m.date), F.text('tags', 'Tags', 'ট্যাগ', (m.tags || []).join(', ')))}${F.text('caption', 'Caption', 'ক্যাপশন', m.caption || '')}${F.select('milestoneId', 'Linked milestone', 'মাইলফলক', await milestoneOptions(), m.milestoneId || '')}<label class="switch"><input type="checkbox" name="fav" ${m.fav ? 'checked' : ''}><span></span> ⭐ Favourite — goes first in his storybook</label>`
       : `<p class="muted">${esc(it.caption)} <span class="pill">from ${it.src}</span></p>`}
       <div class="kv sm"><span>Original</span><b>${b?.original ? fmtBytes(b.original.size) + ' on this device' : 'not on this device'}${p.remote ? ' · ☁︎ synced copy ' + fmtBytes(p.size || 0) : p.type === 'photo' ? ' · not yet synced' : ' · device only'}</b></div>
       ${b?.original ? `<button type="button" class="linkbtn" data-act="dlOriginal" data-id="${id}">${icon('download')} Save original</button>` : ''}`,
-    save: isMedia ? async fd => { await DB.put('media', { ...m, date: val(fd, 'date'), caption: val(fd, 'caption'), tags: val(fd, 'tags').split(',').map(t => t.trim().toLowerCase()).filter(Boolean), milestoneId: val(fd, 'milestoneId') }, it.recId); } : null,
+    save: isMedia ? async fd => { await DB.put('media', { ...m, date: val(fd, 'date'), caption: val(fd, 'caption'), tags: val(fd, 'tags').split(',').map(t => t.trim().toLowerCase()).filter(Boolean), milestoneId: val(fd, 'milestoneId'), fav: !!fd.get('fav') }, it.recId); } : null,
     del: isMedia ? async () => { await DB.del(it.recId); await DB.del(id); Media.forget(id); } : null,
     focus: false
   });

@@ -18,7 +18,13 @@ const Motion = (() => {
   }
   const VINE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 16" preserveAspectRatio="none"><path d="M0,8 Q12,0 24,8 T48,8" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round"/><path d="M11,4 q4,-5 9,-3 q-3,5 -9,3z M37,12 q-4,5 -9,3 q3,-5 9,-3z"/><circle cx="24" cy="8" r="2"/><circle cx="0" cy="8" r="2"/><circle cx="48" cy="8" r="2"/></svg>';
   const url = svg => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-  function installArt() { const r = document.documentElement.style; r.setProperty('--m-mandala', url(mandalaSVG())); r.setProperty('--m-vine', url(VINE)); }
+  function flowerSVG() {
+    let s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-50 -50 100 100"><g fill="#000">';
+    for (let i = 0; i < 6; i++) s += `<ellipse cx="0" cy="-24" rx="13" ry="22" transform="rotate(${i * 60})"/>`;
+    return s + '</g><circle r="9" fill="#000"/></svg>';
+  }
+  const LEAF = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M6 34 C6 16 18 6 34 6 C34 24 24 34 6 34Z"/><path d="M6 34 L26 14" stroke="#fff" stroke-width="1.6"/></svg>';
+  function installArt() { const r = document.documentElement.style; r.setProperty('--m-mandala', url(mandalaSVG())); r.setProperty('--m-vine', url(VINE)); r.setProperty('--m-flower', url(flowerSVG())); r.setProperty('--m-leaf', url(LEAF)); }
 
   /* ---------- one live object per section (SVG + CSS keyframes) ---------- */
   const OBJ = {
@@ -83,30 +89,40 @@ const Motion = (() => {
     return `<div class="ring" style="--rc:${color}"><svg viewBox="0 0 72 72" width="${size}" height="${size}"><circle cx="36" cy="36" r="${r}" class="rt"/><circle cx="36" cy="36" r="${r}" class="rv" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - v)).toFixed(1)}" style="--c:${c.toFixed(1)}"/></svg><b>${label}</b><span>${sub}</span></div>`;
   }
 
-  /* ---------- the OPENING show (≈5.5 s, every cold open, any tap skips) ---------- */
+  /* ---------- the OPENING show — a garden sunrise (≈5.5 s, every cold open, any tap skips) ---------- */
   async function intro() {
     if (still() || !(await DB.meta.get('intro', true))) return;
     const a = ageOn(Child.birth), g = Cal.greeting(), t = Cal.today();
     let photo = './img/bg-affaan.jpg';
     try { const it = (await galleryItems()).find(i => i.type === 'photo'); if (it) photo = (await Media.url(it.photoId, 'full')) || photo; } catch (e) { }
-    const title = "AFFAAN'S WORLD".split('').map((ch, i) => ch === ' ' ? '<span class="sp"></span>' : `<span style="animation-delay:${(2.9 + i * 0.07).toFixed(2)}s">${ch}</span>`).join('');
-    let stars = '', dust = '';
-    for (let i = 0; i < 46; i++) stars += `<i style="left:${(Math.random() * 100).toFixed(1)}%;top:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(-Math.random() * 4).toFixed(2)}s"></i>`;
-    for (let i = 0; i < 18; i++) dust += `<i style="left:${(4 + Math.random() * 92).toFixed(1)}%;animation-delay:${(Math.random() * 6).toFixed(2)}s;animation-duration:${(7 + Math.random() * 5).toFixed(1)}s"></i>`;
+    const title = "Affaan's World".split('').map((ch, i) => ch === ' ' ? '<span class="sp"></span>' : `<span style="animation-delay:${(3.0 + i * 0.06).toFixed(2)}s">${esc(ch)}</span>`).join('');
+    let petals = ''; for (let i = 0; i < 16; i++) petals += `<i style="left:${(Math.random() * 100).toFixed(1)}%;animation-delay:${(1.2 + Math.random() * 3).toFixed(2)}s;animation-duration:${(5 + Math.random() * 4).toFixed(1)}s;background:${['#F28DB2', '#F2C14E', '#FFFFFF', '#8FD06A'][i % 4]}"></i>`;
     const el = document.createElement('div'); el.id = 'intro'; el.setAttribute('role', 'presentation');
-    el.innerHTML = `<div class="in-stars">${stars}</div><div class="in-dust">${dust}</div>
-      <div class="in-stage"><i class="in-m2"></i><i class="in-m1"></i>
-        <svg class="in-svg" viewBox="-110 -110 220 220"><circle class="in-ring" r="104" pathLength="1"/><circle class="in-ring2" r="62" pathLength="1"/></svg>
-        <div class="in-photo" style="background-image:url('${photo}')"></div><div class="in-flash"></div></div>
-      <div class="in-text"><div class="in-title">${title}</div><div class="in-bn">আফফানের পৃথিবী</div><div class="in-sub">A LIFE, LOVINGLY KEPT</div>
-        <div class="in-greet">${g[0]} · day ${a.days.toLocaleString()} · ${t.bd.d} ${t.bd.month}</div></div>
-      <div class="in-skip">TAP ANYWHERE TO SKIP</div>`;
+    el.innerHTML = `<div class="in-sky"></div><div class="in-sun"></div>
+      <svg class="in-hills" viewBox="0 0 400 220" preserveAspectRatio="xMidYMax slice">
+        <path class="h1" d="M0 120 C70 80 130 110 200 92 C270 74 330 108 400 86 V220 H0Z" fill="#9CCB8A"/>
+        <path class="h1" d="M0 120 C70 80 130 110 200 92 C270 74 330 108 400 86" fill="none" stroke="#fff" stroke-width="1.4" stroke-dasharray="3 4" opacity=".7"/>
+        <path class="h2" d="M0 150 C80 128 150 146 220 132 C290 118 340 140 400 126 V220 H0Z" fill="#6FB25A"/>
+        <path class="h2" d="M0 150 C80 128 150 146 220 132 C290 118 340 140 400 126" fill="none" stroke="#fff" stroke-width="1.3" stroke-dasharray="3 4" opacity=".7"/>
+        <path class="river" d="M0 176 C120 166 260 182 400 170 V188 C260 196 120 186 0 194Z" fill="#5FB3E0"/>
+        <circle class="seed" cx="200" cy="40" r="4" fill="#8A5A30"/>
+        <path class="trunk" pathLength="1" d="M200 152 C199 132 201 112 200 92" stroke="#8A5A30" stroke-width="7" stroke-linecap="round" fill="none"/>
+        <path class="br b1" pathLength="1" d="M200 112 Q186 100 174 98" stroke="#8A5A30" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+        <path class="br b2" pathLength="1" d="M200 104 Q214 92 228 92" stroke="#8A5A30" stroke-width="3.4" stroke-linecap="round" fill="none"/>
+        <g class="crown">${Array.from({ length: 34 }, (_, i) => { const an = i * 2.39996, r = Math.sqrt(i + 1) * 4.4; return `<ellipse cx="${(200 + Math.cos(an) * r * 1.2).toFixed(1)}" cy="${(84 + Math.sin(an) * r * .8).toFixed(1)}" rx="5" ry="3" fill="${i % 5 === 0 ? '#E8B93A' : '#3E9B45'}" transform="rotate(${(an * 57.3).toFixed(0)} ${(200 + Math.cos(an) * r * 1.2).toFixed(1)} ${(84 + Math.sin(an) * r * .8).toFixed(1)})" style="animation-delay:${(2.0 + i * 0.025).toFixed(2)}s"/>`; }).join('')}</g>
+        <g class="flowers">${[[176, 96, '#E46A8C'], [224, 86, '#4F8FDB'], [206, 72, '#9B6BE0'], [186, 78, '#3DAA66']].map(([x, y, c], i) => `<circle cx="${x}" cy="${y}" r="3.6" fill="${c}" style="animation-delay:${(2.5 + i * .12).toFixed(2)}s"/>`).join('')}</g>
+      </svg>
+      <div class="in-petals">${petals}</div>
+      <div class="in-doel">${doelSVG()}</div>
+      <div class="in-photo" style="background-image:url('${photo}')"></div>
+      <div class="in-text"><div class="in-title">${title}</div><div class="in-bn">আফফানের পৃথিবী</div>
+        <div class="in-greet">${g[0]} · day ${a.days.toLocaleString()} · ${bnNum(t.bd.d)} ${t.bd.month}</div></div>
+      <div class="in-skip">tap anywhere to skip</div>`;
     document.body.appendChild(el); document.documentElement.classList.add('intro-on');
     await new Promise(res => {
       let done = false;
       const end = fast => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => { el.remove(); document.documentElement.classList.remove('intro-on'); res(); }, fast ? 300 : 650); };
-      const skip = () => end(true);
-      el.addEventListener('pointerdown', skip); document.addEventListener('keydown', skip, { once: true });
+      el.addEventListener('pointerdown', () => end(true)); document.addEventListener('keydown', () => end(true), { once: true });
       setTimeout(() => end(false), 5600);
     });
   }

@@ -1,4 +1,4 @@
-# Affaan's World v5
+# Affaan's World v7
 
 A private, offline-first parent app for **Affaan Rehbar** (born 30 Sep 2024). It's a lifelong record vault and gallery, with a short "play together" corner.
 **Live:** <https://affaans-world.vercel.app> (Vercel project `affaans-world`).
@@ -14,6 +14,36 @@ It’s a vanilla HTML/CSS/JS installable PWA with no framework and no build step
 | **Gallery & timeline** | Photos and videos by month, search by caption or tag, filter by month or tag, link to milestones. The timeline shows every event by date. |
 | **Reports** | Monthly summary, a printable **paediatrician summary** (Print → Save as PDF), and the Learning report (the v4 progress report) |
 | **Settings** | Child profile, sync and account, second-parent invite, storage used vs 1 GB, **Backup now / Restore**, PIN and auto-lock, voice check |
+
+## What's new in v7 — The Garden (design algorithm: *his data grows a world*)
+The design is no longer decoration. Every picture is **drawn from his own records**, so the app looks different each month because he is different. See [`docs/DESIGN.md`](docs/DESIGN.md) for the full design system.
+- **Phase 1 – The Garden (Home):**
+  - A procedural SVG garden replaces the mandala hero. The tree's height follows his height. Milestones he reached become flowers, new words become golden-angle leaves, and photos become lanterns. Vaccines become roots, play stars become butterflies, and his stickers sit in the grass.
+  - The sun and moon follow the Dhaka hour, and paddy and petals follow the Bengali season.
+  - A tap-to-explain legend sits under the garden, with **On this day** cards from past years.
+  - The opening show is now a **garden sunrise**: a seed sprouts, the tree grows, a Doel bird flies in, his photo appears and the title bounces in. Any tap skips it.
+  - A **backup reminder** appears when you have data but no recent backup.
+  - **Text size** setting.
+  - Themes: Garden (day) / Emerald (night) / Auto.
+- **Phase 2 – His island (kid mode for a 2-year-old):**
+  - A tappable island with 13 spots, plus **Today's picks** chosen from his age band and recent play.
+  - **Family faces** game ("Where's Nanu?"), using your own photos.
+  - **Shape sorter** with drag-and-drop.
+  - **Music:** xylophone, tabla and ektara.
+  - **Finger-paint easel** (keep the painting for the gallery).
+  - **Stickers** earned on the "play outside" screen go into the Garden.
+  - **Wind-down:** the screen dims and slows in the last two minutes.
+- **Phase 3 – Family voices:**
+  - Record Ammu/Abbu/Nanu saying letters, numbers, colours, words, story pages and family names (Play → Voices).
+  - Recorded clips **replace the robot voice** everywhere they exist and sync to the other parent.
+  - They are included in backups.
+  - *Needs microphone permission the first time.*
+- **Phase 4 – Records that read like a story:**
+  - **Growth:** a door-frame of pencil marks (his silhouette at real scale beside a chair and table) and **WHO percentile bands** (3rd–97th, 15th–85th). Each reading shows its percentile.
+  - **Vaccines:** a **passport** with a stamp per EPI dose.
+  - **Monthly storybook:** auto-titled chapters ("The month he kicked a ball") with your note, printable by month or by year.
+  - **Doctor share:** a 7-day private link to the paediatrician summary (sign-in required to create it). Opens read-only at `/share.html`.
+  - **Password-protected backups:** AES-256-GCM, `.affaan` file. If the password is lost, the backup cannot be opened.
 
 ## What's new in v6 — EYE 3 standard: Emerald & Gold, alive and real-time
 - **Opening show** (about 5.5 s, every time the app opens; any tap skips; can be turned off in Settings): a gold ring draws itself, a lotus mandala blooms, his photo appears, AFFAAN'S WORLD rises letter by letter in engraved gold, and a greeting ends it.

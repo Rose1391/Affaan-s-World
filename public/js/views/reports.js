@@ -1,8 +1,8 @@
 /* ============ REPORTS: monthly summary · paediatrician summary (print/PDF) · learning ============ */
 let repMonth = todayISO().slice(0, 7);
 Views.reports = async ([tab = 'monthly']) => {
-  const t = [['monthly', 'Monthly', 'মাসিক'], ['doctor', 'For the paediatrician', 'ডাক্তারের জন্য'], ['learning', 'Learning', 'শেখা']];
-  const body = tab === 'doctor' ? await doctorPreview() : tab === 'learning' ? await learningHTML() : await monthlyHTML();
+  const t = [['monthly', 'Monthly', 'মাসিক'], ['book', 'Storybook', 'গল্পের বই'], ['doctor', 'For the paediatrician', 'ডাক্তারের জন্য'], ['learning', 'Learning', 'শেখা']];
+  const body = tab === 'book' ? await storybookHTML() : tab === 'doctor' ? await doctorPreview() : tab === 'learning' ? await learningHTML() : await monthlyHTML();
   return `${pageHead('Reports', 'রিপোর্ট', 'Monthly story · paediatrician summary · learning')}<div class="pad">${tabs(t, tab, 'repTab')}${body}</div>`;
 };
 ACT.repTab = el => go('reports/' + el.dataset.v);
@@ -62,6 +62,7 @@ img.ph{width:110px;height:110px;object-fit:cover;border-radius:6px;margin:2px}.n
 @media print{.noprint{display:none}body{margin:10mm}h2{break-after:avoid}tr{break-inside:avoid}}`;
 async function printDoc(title, html) {
   const doc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${PRINT_CSS}</style></head><body>${html}</body></html>`;
+  if (printDoc.capture) { printDoc.captured = doc; return; }
   const blob = new Blob([doc], { type: 'text/html' });
   const w = window.open(URL.createObjectURL(blob), '_blank');
   if (!w) { downloadBlob(blob, title.replace(/[^\w-]+/g, '-') + '.html'); toast('Saved as HTML — open it and print'); return; }
@@ -98,7 +99,7 @@ async function doctorData() {
 async function doctorPreview() {
   const D = await doctorData();
   const concerns = D.bands.filter(x => x.past && x.open.length);
-  return `<div class="toolbar"><span class="muted sm">A one-page summary to show or hand to the doctor.</span><button class="btn primary" data-act="printDoctor">${icon('print')} Print / Save PDF</button></div>
+  return `<div class="toolbar"><span class="muted sm">A one-page summary to show or hand to the doctor.</span><span class="btnrow" style="margin:0"><button class="btn" data-act="shareDoctor">${icon('link')} Share · 7-day link</button><button class="btn primary" data-act="printDoctor">${icon('print')} Print / PDF</button></span></div>
   <div class="panel rep">
     <h3>${esc(Child.name)}</h3><p class="muted">Born ${fmtDate(Child.birth)} · ${ageText(D.a)}</p>
     <div class="stats3"><div><b>${D.growth.find(g => g.weight != null)?.weight ?? '—'}</b><span>kg</span></div><div><b>${D.growth.find(g => g.height != null)?.height ?? '—'}</b><span>cm</span></div><div><b>${D.growth.find(g => g.head != null)?.head ?? '—'}</b><span>head cm</span></div></div>
@@ -114,7 +115,7 @@ ACT.printDoctor = async () => {
   printDoc(`${Child.first()} - paediatrician summary ${D.t}`, `<p class="noprint muted">Use your browser's <b>Print → Save as PDF</b> to keep a copy.</p>
   <h1>${esc(Child.name)} <span class="bn" style="font-weight:400">${esc(Child.nameBn || '')}</span></h1>
   <p class="sub">Paediatrician summary · prepared ${fmtDate(D.t)} · born ${fmtDate(Child.birth)} · age <b>${ageText(D.a)}</b> (${D.a.months} months)</p>
-  <h2>Growth</h2>${D.growth.length ? `<table><tr><th>Date</th><th>Age</th><th>Weight (kg)</th><th>Height/length (cm)</th><th>Head circ. (cm)</th></tr>${D.growth.slice(0, 12).map(g => `<tr><td>${fmtDate(g.date)}</td><td>${ageShort(Child.birth, g.date)}</td><td>${g.weight ?? ''}</td><td>${g.height ?? ''}</td><td>${g.head ?? ''}</td></tr>`).join('')}</table>` : '<p class="muted">No measurements recorded.</p>'}
+  <h2>Growth</h2>${D.growth.length ? `<table><tr><th>Date</th><th>Age</th><th>Weight (kg) · WHO %ile</th><th>Height/length (cm) · %ile</th><th>Head circ. (cm) · %ile</th></tr>${D.growth.slice(0, 12).map(g => { const m = ageMonthsFloat(Child.birth, g.date), pc = k => g[k] != null ? `${g[k]} <span class="muted">· ${WHO.ordinalPct(WHO.z(k, m, g[k]))}</span>` : ''; return `<tr><td>${fmtDate(g.date)}</td><td>${ageShort(Child.birth, g.date)}</td><td>${pc('weight')}</td><td>${pc('height')}</td><td>${pc('head')}</td></tr>`; }).join('')}</table>` : '<p class="muted">No measurements recorded.</p>'}
   <h2>Immunisations (Bangladesh EPI + others)</h2><table><tr><th>Vaccine</th><th>Schedule</th><th>Status</th></tr>${D.vrows.map(x => `<tr><td>${esc(x.v.en)}</td><td>${esc(x.v.at)}</td><td>${vs(x)}</td></tr>`).join('')}${D.custom.map(c => `<tr><td>${esc(c.name)}</td><td>—</td><td>${c.given ? '<span class="ok">✓ ' + fmtDate(c.given) + '</span>' : 'due ' + fmtDate(c.due)}</td></tr>`).join('')}</table>
   <h2>Development (CDC milestone checklists)</h2><table><tr><th>Age band</th><th>Recorded</th><th>Not yet seen</th></tr>${D.bands.map(x => `<tr><td>${x.b.en}</td><td>${x.done.length}/${x.b.items.length}</td><td>${x.open.length ? (x.past ? '<span class="warn">' : '') + x.open.map(i => `[${DEV_TAGS[i.tag].en}] ${esc(i.en)}`).join('<br>') + (x.past ? '</span>' : '') : '<span class="ok">—</span>'}</td></tr>`).join('')}</table>
   <p class="muted">Language: ${D.words.filter(w => w.type !== 'skill').length} words logged (${D.words.filter(w => w.lang === 'bn').length} Bangla, ${D.words.filter(w => w.lang === 'en').length} English).${D.words.length ? ' Recent: ' + D.words.sort((x, y) => y.date.localeCompare(x.date)).slice(0, 15).map(w => esc(w.word)).join(', ') : ''}</p>
@@ -140,3 +141,25 @@ async function learningHTML() {
   <div class="panel"><h3>What ${esc(Child.first())} explores most</h3>${rows.length ? rows.map((r, i) => `<div class="bar"><span>${r.l}</span><i><i style="width:${r.n / maxT * 100}%;background:hsl(${(i * 47) % 360} 55% 48%)"></i></i><b>${r.n}</b></div>`).join('') : '<p class="muted">Play a session together and his favourite areas will appear here.</p>'}</div>
   <div class="panel"><h3>Off-screen</h3><div class="bar"><span>Spark days</span><i><i style="width:${Math.min(100, spark * 5)}%;background:#D9922E"></i></i><b>${spark}</b></div><div class="bar"><span>Reading days</span><i><i style="width:${Math.min(100, read * 5)}%;background:#1B7F8E"></i></i><b>${read}</b></div></div>`;
 }
+
+/* ---------- share with the doctor: a private link that expires in 7 days ---------- */
+ACT.shareDoctor = async () => {
+  printDoc.capture = true; try { await ACT.printDoctor(); } finally { printDoc.capture = false; }
+  const html = printDoc.captured, until = fmtDate(isoDate(addDays(new Date(), 7)));
+  try {
+    toast('Creating a private link…');
+    const signed = await Sync.shareText(html, 7);
+    const link = `${location.origin}${location.pathname.replace(/[^/]*$/, '')}share.html#${encodeURIComponent(signed)}`;
+    Sheet.open({ title: 'Share with the doctor · <span class="bn">ডাক্তারকে পাঠান</span>',
+      body: `<p class="muted sm">Anyone with this link can view the summary until <b>${until}</b>. It is not listed anywhere and stops working after that.</p>
+        <label class="fld"><span class="lbl">Private link</span><input readonly value="${esc(link)}" id="shareLink"></label>
+        <div class="btnrow"><button type="button" class="btn primary" data-act="shareNative" data-l="${esc(link)}">${icon('link')} Share…</button><button type="button" class="btn" data-act="copyLink">Copy</button>
+        <a class="btn" href="https://wa.me/?text=${encodeURIComponent(`${Child.first()}'s health summary (valid until ${until}): ${link}`)}" target="_blank" rel="noopener">WhatsApp</a></div>` });
+  } catch (e) {
+    const file = new File([html], `${Child.first()}-summary-${todayISO()}.html`, { type: 'text/html' });
+    if (navigator.canShare?.({ files: [file] })) { try { await navigator.share({ files: [file], title: `${Child.first()} — summary for the doctor` }); return; } catch (x) { } }
+    downloadBlob(file, file.name); toast(e.message.includes('Sign in') ? 'Saved the file instead — sign in to make share links' : 'Saved the file instead', 'err');
+  }
+};
+ACT.shareNative = async el => { try { await navigator.share({ title: `${Child.first()} — summary for the doctor`, url: el.dataset.l }); } catch (e) { ACT.copyLink(); } };
+ACT.copyLink = async () => { const i = $('#shareLink'); try { await navigator.clipboard.writeText(i.value); toast('Link copied'); } catch (e) { i.select(); document.execCommand('copy'); toast('Link copied'); } };

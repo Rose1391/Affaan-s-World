@@ -100,6 +100,16 @@ const Sync = (() => {
         await DB.blob.update(p.id, { uploaded: true });
         await DB.patch(p.id, 'photo', { remote: true });
       }
+      // 2b) family voice clips up / deletes
+      for (const v of (await DB.allRecords()).filter(r => r.kind === 'voice')) {
+        const path = `${familyId}/voice/${Voice.safe(v.data.key)}.${Voice.ext(v.data.mime)}`;
+        if (v.deleted) { if (v.data.remote) { await client.storage.from('photos').remove([path]); await DB.put('voice', { ...v.data, remote: false }, v.id); await DB.del(v.id); } continue; }
+        if (v.data.remote) continue;
+        const b = await DB.blob.get(v.id); if (!b?.audio) continue;
+        const { error } = await client.storage.from('photos').upload(path, b.audio, { upsert: true, contentType: b.audio.type || v.data.mime, cacheControl: '31536000' });
+        if (error) throw error;
+        await DB.patch(v.id, 'voice', { remote: true });
+      }
       // push the "remote:true" flags just written
       const again = await DB.dirty();
       if (again.length) {
@@ -130,6 +140,21 @@ const Sync = (() => {
     return state();
   }
   const soon = debounce(() => run(), 3000);
+  async function downloadFile(rel, mime) {
+    if (!client || !session || !familyId || !navigator.onLine) return null;
+    const { data, error } = await client.storage.from('photos').download(`${familyId}/${rel}`);
+    return error ? null : (mime ? new Blob([data], { type: mime }) : data);
+  }
+  // doctor share: upload a self-contained HTML summary, return a 7-day signed link
+  async function shareText(html, days = 7) {
+    if (!client || !session || !navigator.onLine) throw new Error('Sign in (Settings → Sync) and be online to create a share link.');
+    if (!familyId) await ensureFamily();
+    const path = `${familyId}/share/${uid()}.txt`;
+    const { error } = await client.storage.from('photos').upload(path, new Blob([html], { type: 'text/plain' }), { contentType: 'text/plain;charset=utf-8', upsert: false });
+    if (error) throw error;
+    const { data, error: e2 } = await client.storage.from('photos').createSignedUrl(path, days * 86400); if (e2) throw e2;
+    return data.signedUrl;
+  }
   async function downloadPhoto(id) {
     if (!client || !session || !familyId || !navigator.onLine) return null;
     const { data, error } = await client.storage.from('photos').download(`${familyId}/${id}.jpg`);
@@ -150,5 +175,5 @@ const Sync = (() => {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) soon(); });
   setInterval(() => run(), 5 * 60 * 1000);
 
-  return { init, run, state, saveConfig, clearConfig, getConfig, signIn, signUp, magicLink, signOut, verifyPassword, invite, cancelInvite, members, downloadPhoto, storageUsed, keyRole };
+  return { init, run, state, saveConfig, clearConfig, getConfig, signIn, signUp, magicLink, signOut, verifyPassword, invite, cancelInvite, members, downloadPhoto, downloadFile, shareText, storageUsed, keyRole };
 })();

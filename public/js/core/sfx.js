@@ -27,7 +27,18 @@ const Sfx = (() => {
     win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.28, 'triangle', 0.13, i * 0.09)),
     oops: () => tone(320, 0.22, 'sine', 0.1, 0, 0.62),
     chirp: () => { tone(2200, 0.07, 'sine', 0.08, 0, 1.4); tone(2600, 0.08, 'sine', 0.08, 0.1, 1.3); tone(2400, 0.06, 'sine', 0.07, 0.2, 1.5); },
-    whoosh: () => tone(300, 0.25, 'sawtooth', 0.03, 0, 3)
+    whoosh: () => tone(300, 0.25, 'sawtooth', 0.03, 0, 3),
+    // instruments for the music hut
+    bar: f => { tone(f, 1.1, 'sine', 0.22); tone(f * 4, 0.25, 'sine', 0.05); tone(f * 2.76, 0.4, 'triangle', 0.04); },
+    drum: (f, bend = 0.55, dur = 0.5, vol = 0.4) => { tone(f, dur, 'sine', vol, 0, bend); noise(0.05, 0.12); },
+    pluck: f => { tone(f, 1.4, 'triangle', 0.2, 0, 1.01); tone(f * 2, 0.6, 'sine', 0.06); },
+    lullaby: () => [523, 440, 392, 440, 523, 392].forEach((f, i) => tone(f, 0.55, 'sine', 0.07, i * 0.42))
   };
+  function noise(dur, vol) {
+    if (!Speech.isEnabled()) return; const c = ac(); if (!c) return;
+    const b = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const s = c.createBufferSource(), g = c.createGain(); s.buffer = b; g.gain.value = vol; s.connect(g); g.connect(c.destination); s.start();
+  }
 })();
 ['pointerdown', 'touchend', 'click'].forEach(ev => document.addEventListener(ev, () => Sfx.unlock(), { once: true, capture: true }));
