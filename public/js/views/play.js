@@ -64,9 +64,10 @@ Views.play = async () => {
   else if (playTab === 'books') body = await renderBooks();
   else if (playTab === 'family') body = await familySetupHTML();
   else if (playTab === 'voices') body = await voicesHTML();
+  else if (playTab === 'heroes') body = await heroPhotosHTML();
   else body = renderTips();
   return `${pageHead('Play together', 'একসাথে খেলি', 'Bilingual learning · short sessions · then outside')}
-  <div class="pad">${tabs([['start', 'Start', 'শুরু'], ['family', 'Family', 'পরিবার'], ['voices', 'Voices', 'কণ্ঠ'], ['spark', 'Daily Spark', 'আজকের খেলা'], ['books', 'Books', 'বই'], ['tips', 'Tips', 'পরামর্শ']], playTab, 'playTab')}${body}</div>`;
+  <div class="pad">${tabs([['start', 'Start', 'শুরু'], ['family', 'Family', 'পরিবার'], ['voices', 'Voices', 'কণ্ঠ'], ['heroes', 'Hero photos', 'মহান ব্যক্তিত্ব'], ['spark', 'Daily Spark', 'আজকের খেলা'], ['books', 'Books', 'বই'], ['tips', 'Tips', 'পরামর্শ']], playTab, 'playTab')}${body}</div>`;
 };
 
 /* ---- Daily Spark / Books / Tips (from v4 Parent Corner) ---- */
@@ -315,12 +316,20 @@ ACT.kWorldTap = el => { const it = WORLD[kidState.world].items[+el.dataset.i]; p
 /* ---- great personalities: 15 fields × 3 ---- */
 const heroOfDay = () => { const all = PERSONALITIES.flatMap(f => f.people.map((p, i) => [f, i])); const d = Math.floor((Date.now() + 6 * 3600e3) / 864e5); return all[d % all.length]; };
 const medal = (p, c, big) => `<div class="medal ${big ? 'big' : ''}" style="--mc:${c}"><span>${p.e}</span></div>`;
+// portraits the parents add (kind 'heropic'); never for the Prophet (PBUH) or the Companions (RA)
+let HEROPICS = {};
+async function loadHeroPics() { try { HEROPICS = Object.fromEntries((await DB.list('heropic')).filter(r => r.photoId && !HERO_NO_PHOTO.has(r.name)).map(r => [r.name, r.photoId])); } catch (e) { } }
+loadHeroPics(); Bus.on('change', () => loadHeroPics());
+const heroTile = (p, c) => HEROPICS[p.n] && !HERO_NO_PHOTO.has(p.n)
+  ? `<div class="hpic" style="--mc:${c}"><img data-photo="${esc(HEROPICS[p.n])}" data-size="thumb" alt="${esc(p.n)}"><span class="hpic-e">${p.e}</span></div>` : medal(p, c);
 function personCard(f, p, i) {
-  return `<article class="hcard" style="--mc:${f.c}">${medal(p, f.c)}<div class="grow">
+  const why = HERO_WHY[p.n] || ['', ''];
+  return `<article class="hcard" style="--mc:${f.c}"><div class="hc-top">${heroTile(p, f.c)}<div class="grow">
     <b>${esc(p.n)}</b><div class="bn hc-bn">${esc(p.bn)}</div>
-    <span class="hval">⭐ ${esc(p.v)} · <span class="bn">${esc(p.vb)}</span></span>
-    <p>${esc(p.dEn)}</p><p class="bn">${esc(p.dBn)}</p>
-    <button class="hear" data-act="kPerson" data-f="${f.k}" data-i="${i}">🔊 Listen · <span class="bn">শোনো</span>${Voice.has('P:' + p.n) ? ' · 🎙️' : ''}</button></div></article>`;
+    <span class="hval">⭐ ${esc(p.v)} · <span class="bn">${esc(p.vb)}</span></span></div></div>
+    <div class="hkid"><p>${esc(p.dEn)}</p><p class="bn">${esc(p.dBn)}</p>
+    <button class="hear" data-act="kPerson" data-f="${f.k}" data-i="${i}">🔊 Listen · <span class="bn">শোনো</span>${Voice.has('P:' + p.n) ? ' · 🎙️' : ''}</button></div>
+    <details class="hwhy"><summary>Why famous · <span class="bn">কেন বিখ্যাত</span></summary><p>${esc(why[0])}</p><p class="bn">${esc(why[1])}</p></details></article>`;
 }
 function peopleHTML() {
   const f = PERSONALITIES.find(x => x.k === kidState.people);
@@ -335,6 +344,21 @@ function peopleHTML() {
     <div class="hday"><small>Hero of the day · <span class="bn">আজকের অনুপ্রেরণা</span></small>${personCard(hf, hp, hi)}</div>
     <div class="hgrid">${PERSONALITIES.map((x, n) => `<button class="hfield" style="--mc:${x.c}" data-act="kPeople" data-v="${x.k}"><span class="hn">${n + 1}</span><span class="he">${x.e}</span><b>${esc(x.en)}</b><span class="bn">${esc(x.bn)}</span><span class="hp">${x.people.map(p => p.e).join(' ')}</span></button>`).join('')}</div></div>`;
 }
+// parent tab: add a portrait per hero
+async function heroPhotosHTML() {
+  await loadHeroPics();
+  return `<p class="muted sm" style="margin:4px 2px 12px">Add a portrait for each personality from your phone — it appears in his Heroes cards and syncs to the other parent. Choose clear, respectful pictures. No portrait is shown for the Prophet (PBUH) or the Companions (RA).</p>
+  ${PERSONALITIES.map((f, n) => `<section class="panel hpanel" style="--mc:${f.c}"><h3>${n + 1}. ${esc(f.en)}<span class="bn">${esc(f.bn)}</span></h3><div class="hprow">${f.people.map(p => HERO_NO_PHOTO.has(p.n)
+    ? `<div class="hpitem">${medal(p, f.c)}<b>${esc(p.n)}</b><small class="muted">Symbol only</small></div>`
+    : `<button class="hpitem" data-act="heroPic" data-n="${esc(p.n)}">${heroTile(p, f.c)}<b>${esc(p.n)}</b><small class="muted">${HEROPICS[p.n] ? '✓ Change photo' : '📷 Add photo'}</small></button>`).join('')}</div></section>`).join('')}`;
+}
+ACT.heroPic = async el => {
+  const name = el.dataset.n; if (HERO_NO_PHOTO.has(name)) return;
+  const r = (await DB.list('heropic')).find(x => x.name === name);
+  Sheet.open({ title: esc(name) + ' · <span class="bn">ছবি</span>', body: `${F.photos(r && r.photoId ? [r.photoId] : [], 'Portrait', 'প্রতিকৃতি')}<p class="muted sm">A head-and-shoulders picture works best; it is shown in a small round tile.</p>`,
+    save: async (fd, f) => { const ids = await formPhotos(f); await DB.put('heropic', { name, photoId: ids[ids.length - 1] || '' }, r && r.id); await loadHeroPics(); },
+    del: r ? () => DB.del(r.id) : null });
+};
 ACT.kPeople = el => { Sfx.tap(); kidState.people = el.dataset.v || null; route(); requestAnimationFrame(() => (document.querySelector('.kid .kpad') || document.body).scrollIntoView({ block: 'start' })); };
 ACT.kPerson = el => { const f = PERSONALITIES.find(x => x.k === el.dataset.f), p = f.people[+el.dataset.i]; Kid.tap('people'); Kid.reward(el); Voice.say('P:' + p.n, [[p.n + '. ' + p.dEn, 'en-US', 0.85], [p.bn + '। ' + p.dBn, 'bn-BD', 0.85]]); };
 

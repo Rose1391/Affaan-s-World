@@ -1232,3 +1232,21 @@ body.winddown .spot .sp-ic,body.winddown .ktile{animation-duration:7s}
 #opening .op-greet{margin-top:8px;font:500 clamp(12px,3.4vw,15px)/1.4 var(--body);letter-spacing:.04em;color:rgba(240,228,200,.8);opacity:0;animation:opFade .8s 5.75s forwards}
 @keyframes opFade{to{opacity:1}}
 #opening .op-skip{position:absolute;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));font:500 12px/1 var(--body);letter-spacing:.08em;color:rgba(242,216,150,.6);padding:8px 12px;border:1px solid rgba(242,216,150,.25);border-radius:99px}
+/* hero cards v2: portrait tile + why-famous paragraph */
+.hcard{display:block}
+.hc-top{display:flex;gap:16px;align-items:center}
+.hkid{margin-top:4px}
+.hpic{position:relative;flex:0 0 76px;width:76px;height:76px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,#F7DE9C,var(--mc),#E9BE5C,var(--mc),#F7DE9C);box-shadow:0 6px 14px rgba(60,40,10,.2)}
+.hpic img{width:100%;height:100%;border-radius:50%;object-fit:cover;object-position:50% 25%;border:3px solid #fff;display:block;background:#EFE6D4}
+.hpic .hpic-e{position:absolute;right:-4px;bottom:-2px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:15px;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.hwhy{margin-top:12px;border-top:1px dashed color-mix(in srgb,var(--mc) 35%,#E8DCC4);padding-top:10px}
+.hwhy summary{cursor:pointer;font-weight:800;font-size:14px;color:var(--mc);list-style:none;display:flex;align-items:center;gap:6px}
+.hwhy summary::-webkit-details-marker{display:none}
+.hwhy summary::before{content:"▸";transition:transform .2s}.hwhy[open] summary::before{transform:rotate(90deg)}
+.hwhy p{font-size:14.5px;line-height:1.6;font-weight:500;color:#3B352E;margin-top:8px}.hwhy p.bn{color:#3A4666}
+.hpanel h3{font-size:15px;border-left:4px solid var(--mc);padding-left:10px}
+.hprow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.hpitem{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:12px 6px;border-radius:16px;background:var(--cloud,#F5ECDA);border:0;cursor:pointer;font:inherit;color:inherit}
+.hpitem b{font-size:12.5px;line-height:1.25}.hpitem small{font-size:11.5px}
+.hpitem .medal,.hpitem .hpic{flex:none}
+.hpanel h3 .bn{display:block;font-size:13px;color:var(--slate);margin-top:2px;font-weight:600}
