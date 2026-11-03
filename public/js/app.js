@@ -414,7 +414,7 @@ Views.settings = async () => {
       <div class="kv"><span>On this device</span><b>${recs.length - photos.length} records · ${photos.length} photos/videos${est ? ` · ${fmtBytes(est.usage || 0)} used` : ''}</b></div>
       <div class="kv"><span>Last backup</span><b>${(await DB.meta.get('lastBackup')) ? fmtDate((await DB.meta.get('lastBackup')).slice(0, 10)) : 'never'}</b></div>
       <div class="btnrow"><button class="btn primary" data-act="backupNow">${icon('download')} Backup now</button>
-        <label class="btn">Restore… <input type="file" accept=".zip,application/zip" data-change="restoreZip" hidden></label></div>
+        <label class="btn">Restore… <input type="file" accept=".zip,.affaan,application/zip,application/octet-stream" data-change="restoreZip" hidden></label></div>
       <p class="muted sm" id="backupMsg"></p>
       ${!persisted && navigator.storage?.persist ? '<button class="linkbtn" data-act="persist">Ask the browser to never evict this data</button>' : persisted ? '<p class="muted sm">✓ Browser storage is marked persistent.</p>' : ''}
     </section>
@@ -422,7 +422,8 @@ Views.settings = async () => {
     <section class="panel"><h3>Appearance · <span class="bn">চেহারা</span></h3>
       ${F.row(F.select('theme', 'Theme', 'থিম', [['garden', 'Garden · day'], ['emerald', 'Night garden'], ['auto', 'Follow phone setting']], await DB.meta.get('theme', 'garden')).replace('<select', '<select data-change="setTheme"'),
         F.select('textsize', 'Text size', 'লেখার আকার', [['1', 'Normal'], ['1.12', 'Large'], ['1.25', 'Extra large']], await DB.meta.get('textsize', '1')).replace('<select', '<select data-change="setTextSize"'))}
-      <label class="switch sm"><input type="checkbox" data-change="setIntro" ${(await DB.meta.get('intro', true)) ? 'checked' : ''}><span></span> Opening show when the app opens</label>
+      ${F.select('introMode', 'Opening film', 'শুরুর ছবি', [['short', 'Short · sunrise and title (4 s)'], ['full', 'Full film every time (15 s)'], ['off', 'Off']], await introMode()).replace('<select', '<select data-change="setIntroMode"')}
+      <div class="btnrow"><button class="btn" data-act="watchFilm">▶ Watch the film · <span class="bn">ছবিটি দেখুন</span></button></div>
     </section>
 
     <section class="panel"><h3>Security · <span class="bn">নিরাপত্তা</span></h3>
@@ -471,7 +472,16 @@ function applyTheme(t) {
 const applyTextSize = z => document.documentElement.style.setProperty('--zoom', z || 1);
 ACT.setTextSize = async el => { await DB.meta.set('textsize', el.value); applyTextSize(el.value); };
 ACT.setTheme = async el => { await DB.meta.set('theme', el.value); applyTheme(el.value); };
-ACT.setIntro = async el => { await DB.meta.set('intro', el.checked); toast(el.checked ? 'Opening show on' : 'Opening show off'); };
+async function introMode() { const m = await DB.meta.get('introMode'); if (m) return m; return (await DB.meta.get('intro', true)) ? 'short' : 'off'; }
+ACT.setIntroMode = async el => { await DB.meta.set('introMode', el.value); toast(el.value === 'off' ? 'Opening film off' : el.value === 'full' ? 'Full film on every open' : 'Short opening on'); };
+ACT.watchFilm = () => Film.play('full');
+// first ever open → the whole film; afterwards the chosen mode (short by default)
+async function openingFilm() {
+  const m = await introMode(); if (m === 'off') return;
+  const seen = await DB.meta.get('filmSeen', false);
+  await Film.play(!seen || m === 'full' ? 'full' : 'short');
+  if (!seen) await DB.meta.set('filmSeen', true);
+}
 ACT.setLockAfter = async el => { await DB.meta.set('lockAfter', Number(el.value)); toast('Saved'); };
 ACT.changePin = () => Lock.change();
 ACT.lockNow = () => Lock.lockNow();
@@ -537,7 +547,7 @@ async function boot() {
   Motion.installArt();
   const th = await DB.meta.get('theme', 'garden'); applyTheme(th === 'ivory' ? 'garden' : th); applyTextSize(await DB.meta.get('textsize', '1'));
   await Voice.load();
-  await Motion.intro();
+  await openingFilm();
   Lock.start(async () => { await migrateV4(); route(); });
   Weather.get().catch(() => { });
   Bus.on('unlocked', () => route());

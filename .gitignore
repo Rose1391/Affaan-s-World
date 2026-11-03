@@ -8,3 +8,6 @@ node_modules/
 supabase/.temp/
 test-results/
 *.zip
+
+# local stand-in frames for the opening film (real frames get committed when downloaded)
+public/film/*.jpg
