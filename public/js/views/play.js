@@ -165,7 +165,7 @@ function kidShell(inner, { back = true, title = '', color = '#2E4A8F' } = {}) {
       <div class="ktitle" style="color:${color}">${title}</div>
       <div id="kStars" class="kstars" aria-label="Stars">⭐<b>${s?.stars || 0}</b></div>
       <div id="kidTimer" class="ktimer"><b>--:--</b></div>
-      <button class="khold" data-hold="exit" aria-label="Grown-ups: press and hold to exit"><span>Hold</span><i></i></button>
+      <button class="kexit" data-act="kExitAsk" aria-label="Exit play"><span class="kx-ic">🚪</span><span class="kx-t">Exit<small class="bn">বের হও</small></span></button>
     </div>
     ${inner}
     <div class="bigcard" id="bigcard" hidden></div>
@@ -218,12 +218,24 @@ function outsideScreen() {
     <button class="khold big" data-hold="exit"><span>Grown-ups: press & hold</span><i></i></button>
   </div>`;
 }
+/* Exit → a grown-up gate: hold the button for 1.2 s (a toddler's tap won't do it) */
+ACT.kExitAsk = () => {
+  if ($('#kgate')) return; Sfx.tap();
+  const g = document.createElement('div'); g.id = 'kgate'; g.className = 'kgate';
+  g.innerHTML = `<div class="kgate-card"><div class="kg-ic">🚪</div><b>Leave play?</b><span class="bn">খেলা শেষ করবে?</span>
+    <p>Grown-ups: press and hold the button until it fills up.</p>
+    <button class="khold big gate" data-hold="exit"><span>Hold to leave · <span class="bn">ধরে রাখুন</span></span><i></i></button>
+    <button class="kg-stay" data-act="kExitCancel">Keep playing · <span class="bn">খেলা চলুক</span></button></div>`;
+  document.body.appendChild(g); requestAnimationFrame(() => g.classList.add('on'));
+  clearTimeout(window._kgateT); window._kgateT = setTimeout(() => ACT.kExitCancel(), 12000);
+};
+ACT.kExitCancel = () => { const g = $('#kgate'); if (!g) return; g.classList.remove('on'); setTimeout(() => g.remove(), 250); };
 /* press-and-hold to leave (toddler-proof) */
 (() => {
   let t = null, el = null;
   const startHold = e => {
     const b = e.target.closest('[data-hold]'); if (!b) return; e.preventDefault(); el = b; b.classList.add('holding');
-    t = setTimeout(() => { b.classList.remove('holding'); Kid.finish(); }, 1600);
+    t = setTimeout(() => { b.classList.remove('holding'); clearTimeout(window._kgateT); Kid.finish(); }, b.classList.contains('gate') ? 1200 : 1600);
   };
   const cancel = () => { clearTimeout(t); t = null; if (el) el.classList.remove('holding'); el = null; };
   document.addEventListener('pointerdown', startHold);

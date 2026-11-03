@@ -12,29 +12,40 @@
    7.0  fades into the app
  Canvas for the living parts, DOM for crisp type and the photo. Reduced motion → skipped. */
 const Opening = (() => {
-  const DUR = 6.6;
+  const DUR = 7.2;
   const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
   const sm = (a, b, t) => { const x = clamp((t - a) / (b - a)); return x * x * (3 - 2 * x); };
   const easeOut = x => 1 - Math.pow(1 - clamp(x), 3);
   const back = x => { x = clamp(x); const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
   const rng = seed => { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); };
 
-  // one seeded tree, laid out in unit space (base at 0,0, height ≈ 1), each segment with its own grow window
+  // one seeded tree, laid out in unit space (base at 0,0), each segment with its own grow window.
+  // Its bounding box is measured so the tree can be drawn as large as the screen allows.
   function buildTree() {
     const R = rng(20240930), segs = [], tips = [];
-    const T0 = 1.4, MAXD = 7;
+    const T0 = 1.3, MAXD = 8;
     (function grow(x, y, ang, len, d, t0) {
-      const bend = (R() - .5) * .35, x1 = x + Math.sin(ang) * len, y1 = y - Math.cos(ang) * len;
+      const bend = (R() - .5) * .3, x1 = x + Math.sin(ang) * len, y1 = y - Math.cos(ang) * len;
       const cx = (x + x1) / 2 + Math.cos(ang) * len * bend, cy = (y + y1) / 2 + Math.sin(ang) * len * bend;
-      const dur = .26 + len * .9, t1 = t0 + dur;
-      segs.push({ x, y, cx, cy, x1, y1, w: .042 * Math.pow(.66, d), d, t0, t1 });
+      const dur = .2 + len * .85, t1 = t0 + dur;
+      segs.push({ x, y, cx, cy, x1, y1, w: .05 * Math.pow(.67, d), d, t0, t1 });
       if (d >= MAXD) { tips.push({ x: x1, y: y1, t: t1, r: .6 + R() * .8, c: R() }); return; }
-      if (d >= 4) for (let k = 0; k < 2; k++) tips.push({ x: cx + (R() - .5) * len * .6, y: cy + (R() - .5) * len * .6, t: t1 + R() * .3, r: .45 + R() * .5, c: R() });
-      const n = d < 2 ? 2 : (R() < .28 ? 3 : 2), spread = d === 0 ? .62 : .42 + R() * .14;
-      for (let k = 0; k < n; k++) { const f = n === 1 ? 0 : k / (n - 1) - .5; grow(x1, y1, ang + f * spread * 2 + (R() - .5) * .18, len * (.72 + R() * .08), d + 1, t1 - dur * .25); }
+      if (d >= 5 && R() < .7) for (let k = 0; k < 1; k++) tips.push({ x: cx + (R() - .5) * len * .6, y: cy + (R() - .5) * len * .6, t: t1 + R() * .3, r: .45 + R() * .5, c: R() });
+      const n = d < 2 ? 2 : (R() < .3 ? 3 : 2), spread = d === 0 ? .5 : d === 1 ? .44 : .36 + R() * .14;
+      for (let k = 0; k < n; k++) { const f = n === 1 ? 0 : k / (n - 1) - .5; grow(x1, y1, ang + f * spread * 2 + (R() - .5) * .16, len * (.74 + R() * .08), d + 1, t1 - dur * .3); }
     })(0, 0, 0, .3, 0, T0);
-    const roots = Array.from({ length: 7 }, (_, i) => { const a = (i / 6 - .5) * 2.4 + (R() - .5) * .2; return { a, l: .16 + R() * .14, t0: 1.15 + i * .05 }; });
-    return { segs, tips, roots };
+    const roots = Array.from({ length: 9 }, (_, i) => { const a = (i / 8 - .5) * 2.5 + (R() - .5) * .2; return { a, l: .14 + R() * .14, t0: 1.1 + i * .04 }; });
+    let minX = 0, maxX = 0, minY = 0; tips.forEach(t => { minX = Math.min(minX, t.x); maxX = Math.max(maxX, t.x); minY = Math.min(minY, t.y); });
+    const box = { minX: minX - .04, maxX: maxX + .04, minY: minY - .05 };
+    const photo = { x: (box.minX + box.maxX) / 2, y: (box.minY + -.32) / 2, r: .21 };
+    // perches: sturdy branch tips spread across the canopy, clear of the photo
+    const cand = segs.filter(sg => sg.d >= 3 && sg.d <= 5 && sg.y1 < -.4 && Math.hypot(sg.x1 - photo.x, sg.y1 - photo.y) > photo.r + .07).sort((p, q) => p.x1 - q.x1);
+    const perches = [];
+    for (let k = 0; k < 6; k++) { const want = box.minX + (box.maxX - box.minX) * (.1 + k * .16);
+      const best = cand.filter(c => perches.every(pp => Math.hypot(pp.x - c.x1, pp.y - c.y1) > .14)).sort((p, q) => Math.abs(p.x1 - want) - Math.abs(q.x1 - want))[0];
+      if (best) perches.push({ x: best.x1, y: best.y1, ang: Math.atan2(best.y1 - best.y, best.x1 - best.x) }); }
+    perches.sort((p, q) => p.x - q.x);
+    return { segs, tips, roots, box, photo, perches };
   }
   let TREE = null;
 
@@ -60,6 +71,36 @@ const Opening = (() => {
     return { ac, out, stop: () => { try { out.gain.linearRampToValueAtTime(0, ac.currentTime + .4); setTimeout(() => ac.close(), 600); } catch (e) { } } };
   }
 
+  // the Doel (oriental magpie-robin), Bangladesh's national bird: black above, white belly and wing bar, cocked tail
+  function doel(ctx, x, y, z, face, flap, perched, t) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(face, 1);
+    const rim = 'rgba(255,214,140,.55)', bob = perched ? Math.sin(t * 2.2) * .06 : 0;
+    ctx.lineWidth = Math.max(1, z * .08); ctx.strokeStyle = rim; ctx.fillStyle = '#0B0F0D';
+    // tail
+    const tl = perched ? -.35 + Math.sin(t * 3.1) * .12 : .1;
+    ctx.save(); ctx.translate(-z * .8, -z * 1.0); ctx.rotate(tl);
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-z * 1.25, -z * .55); ctx.lineTo(-z * 1.3, -z * .2); ctx.lineTo(0, z * .25); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#F4F1EA'; ctx.beginPath(); ctx.moveTo(-z * .1, z * .15); ctx.lineTo(-z * 1.25, -z * .25); ctx.stroke(); ctx.restore();
+    // far wing (flying)
+    if (!perched) { ctx.fillStyle = '#141A17'; ctx.beginPath(); ctx.moveTo(z * .1, -z * 1.15); ctx.quadraticCurveTo(-z * .2, -z * (1.6 + flap * 1.1), -z * .9, -z * (1.3 + flap * 1.6)); ctx.quadraticCurveTo(-z * .3, -z * 1.0, z * .2, -z * .95); ctx.fill(); }
+    // body
+    ctx.fillStyle = '#0B0F0D'; ctx.strokeStyle = rim;
+    ctx.beginPath(); ctx.ellipse(0, -z * .95, z * 1.05, z * .6, -.18, 0, 6.29); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#F7F4EC'; ctx.beginPath(); ctx.ellipse(z * .2, -z * .72, z * .72, z * .36, -.12, 0, 3.3); ctx.fill();
+    // head + beak + eye
+    ctx.save(); ctx.translate(z * .92, -z * 1.42); ctx.rotate(bob);
+    ctx.fillStyle = '#0B0F0D'; ctx.beginPath(); ctx.arc(0, 0, z * .44, 0, 6.29); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(z * .36, -z * .08); ctx.lineTo(z * .82, z * .02); ctx.lineTo(z * .36, z * .1); ctx.fill();
+    ctx.fillStyle = '#FFE9B0'; ctx.beginPath(); ctx.arc(z * .14, -z * .1, z * .07, 0, 6.29); ctx.fill(); ctx.restore();
+    // near wing with the white bar
+    ctx.fillStyle = '#121815';
+    if (perched) { ctx.beginPath(); ctx.ellipse(-z * .15, -z * 1.02, z * .78, z * .3, -.2, 0, 6.29); ctx.fill(); ctx.strokeStyle = '#F4F1EA'; ctx.lineWidth = z * .12; ctx.beginPath(); ctx.moveTo(z * .35, -z * 1.08); ctx.lineTo(-z * .6, -z * .9); ctx.stroke(); }
+    else { ctx.beginPath(); ctx.moveTo(z * .25, -z * 1.1); ctx.quadraticCurveTo(-z * .1, -z * (1.7 + flap * 1.3), -z * 1.1, -z * (1.25 + flap * 1.9)); ctx.quadraticCurveTo(-z * .4, -z * .9, z * .3, -z * .85); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = '#F4F1EA'; ctx.lineWidth = z * .12; ctx.beginPath(); ctx.moveTo(z * .1, -z * 1.15); ctx.lineTo(-z * .55, -z * (1.25 + flap * 1.2)); ctx.stroke(); }
+    // legs when perched
+    if (perched) { ctx.strokeStyle = '#3A2A1A'; ctx.lineWidth = Math.max(1, z * .1); ctx.beginPath(); ctx.moveTo(z * .05, -z * .45); ctx.lineTo(-z * .05, 0); ctx.moveTo(z * .3, -z * .45); ctx.lineTo(z * .25, 0); ctx.stroke(); }
+    ctx.restore();
+  }
   async function play() {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     TREE = TREE || buildTree();
@@ -68,7 +109,7 @@ const Opening = (() => {
     try { const it = (await galleryItems()).find(i => i.type === 'photo'); if (it) photo = (await Media.url(it.photoId, 'full')) || photo; } catch (e) { }
     const name = "AFFAAN'S WORLD".split('').map((ch, i) => ch === ' ' ? '<span class="op-sp"></span>' : `<span style="animation-delay:${(4.5 + i * .07).toFixed(2)}s">${esc(ch)}</span>`).join('');
     const el = document.createElement('div'); el.id = 'opening'; el.setAttribute('role', 'presentation');
-    el.innerHTML = `<canvas></canvas><div class="op-photo"><div class="op-ring"></div><div class="op-img" style="background-image:url('${photo}')"></div></div>
+    el.innerHTML = `<canvas></canvas><div class="op-photo"><div class="op-halo"></div>${(() => { let w = ''; for (let i = 0; i < 28; i++) { const a = i / 28 * 360, side = i % 2 ? 1 : -1; w += `<g transform="rotate(${a.toFixed(1)})"><path d="M0 -55 q${side * 5} -5 ${side * 9} -1 q${-side * 5} 4 ${-side * 9} 1z" fill="${i % 3 ? '#E9C46A' : '#F7DE9C'}"/></g>`; } return `<svg class="op-wreath" viewBox="-64 -64 128 128" aria-hidden="true"><circle r="55" fill="none" stroke="#D8A945" stroke-width="1.2"/>${w}<circle r="49" fill="none" stroke="#F2D088" stroke-width="2"/><circle r="46.5" fill="none" stroke="#7A5418" stroke-width=".8"/>${[0, 90, 180, 270].map(a => `<g transform="rotate(${a})"><circle cy="-55" r="3.2" fill="#FFF1C6" stroke="#C9963A" stroke-width=".8"/></g>`).join('')}</svg>`; })()}<div class="op-img" style="background-image:url('${photo}')"></div></div>
       <div class="op-text"><div class="op-title">${name}</div><div class="op-rule"></div><div class="op-bn">আফফানের পৃথিবী</div>
       <div class="op-greet">${esc(g[0])} · day ${a.days.toLocaleString()} of his life · ${bnNum(td.bd.d)} ${esc(td.bd.month)}</div></div>
       <div class="op-skip">tap to skip</div>`;
@@ -82,13 +123,17 @@ const Opening = (() => {
     const size = () => {
       dpr = Math.min(2, devicePixelRatio || 1); W = cv.width = Math.round(innerWidth * dpr); H = cv.height = Math.round(innerHeight * dpr);
       cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px';
-      S = Math.min(H * .46, W * .6); X = W / 2; Y = H * (innerWidth > innerHeight ? .66 : .6);
-      // the photo sits in the heart of the canopy
-      const pd = S * .3 / dpr; ph.style.width = ph.style.height = pd + 'px';
-      ph.style.left = (X / dpr - pd / 2) + 'px'; ph.style.top = ((Y - S * .78) / dpr - pd / 2) + 'px';
+      const bx = TREE.box; Y = H * (innerWidth > innerHeight ? .7 : .62);
+      S = Math.min(W * .96 / (bx.maxX - bx.minX), (Y - H * .045) / -bx.minY); X = W / 2 - S * (bx.minX + bx.maxX) / 2;
+      // the photo sits in the heart of the canopy, as a gold locket
+      const pd = TREE.photo.r * 2 * S / dpr; ph.style.width = ph.style.height = pd + 'px';
+      ph.style.left = ((X + TREE.photo.x * S) / dpr - pd / 2) + 'px'; ph.style.top = ((Y + TREE.photo.y * S) / dpr - pd / 2) + 'px';
       el.style.setProperty('--ground', (Y / dpr) + 'px');
     };
     size(); addEventListener('resize', size);
+    // six birds, each arriving from a different direction, ordered left → right like their perches
+    const FROM = [[-.12, .18, -.05], [.1, -.08, .04], [.42, -.1, -.06], [.62, -.1, .06], [.94, -.06, -.04], [1.12, .3, .05]];
+    const BIRDS = TREE.perches.map((pc, i) => ({ perch: pc, sx: FROM[i % 6][0], sy: FROM[i % 6][1], bend: FROM[i % 6][2], t0: 2.9 + [0, .55, .25, .8, .4, 1.0][i % 6], dur: 1.25 + (i % 3) * .15, ph: i * 1.7, face: 1 }));
     let snd = null; try { snd = music(); } catch (e) { }
     const t0 = performance.now(); let raf = 0, done = false;
     const frame = now => {
@@ -131,23 +176,31 @@ const Opening = (() => {
       ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'lighter';
       // blossoms: gold and soft emerald light along the twigs
       for (const b of TREE.tips) { const p = back((t - b.t - .1) / .5); if (p <= 0) continue; const tw = .75 + .25 * Math.sin(t * 2.4 + b.c * 9);
-        const r = b.r * dpr * 2.5 * p, x = X + b.x * S, y = Y + b.y * S;
-        const c = b.c < .55 ? [246, 214, 130] : b.c < .85 ? [160, 226, 150] : [255, 182, 196];
-        const bg = ctx.createRadialGradient(x, y, 0, x, y, r * 2.4); bg.addColorStop(0, `rgba(${c},${.9 * tw})`); bg.addColorStop(.35, `rgba(${c},${.45 * tw})`); bg.addColorStop(1, `rgba(${c},0)`);
+        const r = b.r * dpr * 1.7 * p, x = X + b.x * S, y = Y + b.y * S;
+        const c = b.c < .5 ? [240, 200, 110] : b.c < .86 ? [140, 214, 130] : [255, 170, 186];
+        const bg = ctx.createRadialGradient(x, y, 0, x, y, r * 2.4); bg.addColorStop(0, `rgba(${c},${.8 * tw})`); bg.addColorStop(.3, `rgba(${c},${.28 * tw})`); bg.addColorStop(1, `rgba(${c},0)`);
         ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(x, y, r * 2.4, 0, 6.29); ctx.fill(); }
       // floating letters and stars, like little lanterns
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       glyphs.forEach(gq => { const p = (t - gq.t0); if (p <= 0) return; const a = sm(0, .5, p) * (1 - sm(2.4, 3.0, p));
         ctx.globalAlpha = a * .8; ctx.fillStyle = '#F6DE9A'; ctx.font = `600 ${Math.round(16 * gq.sz * dpr)}px "Baloo 2","Baloo Da 2",sans-serif`;
         ctx.fillText(gq.ch, (gq.x + Math.sin(t * 1.3 + gq.p) * .012) * W, Y - S * .15 - p * gq.sp * H); });
-      // a Doel flies through
-      const bp = (t - 3.9) / 2.2; if (bp > 0 && bp < 1) { const bx = (-.1 + bp * 1.2) * W, by = (Y - S * 1.05) + Math.sin(bp * 6) * 14 * dpr, f = Math.sin(t * 18), z = 9 * dpr;
-        ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = .95 * sm(0, .1, bp) * (1 - sm(.9, 1, bp)); ctx.fillStyle = '#10261C';
-        ctx.beginPath(); ctx.ellipse(bx, by, z * 1.1, z * .5, -.1, 0, 6.29); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(bx - z * .2, by - z * .2); ctx.quadraticCurveTo(bx - z * .9, by - z * (1.1 + f), bx - z * 1.8, by - z * (.6 + f * 1.2)); ctx.quadraticCurveTo(bx - z * .8, by - z * .1, bx + z * .2, by); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(bx - z, by); ctx.lineTo(bx - z * 2.1, by + z * .35); ctx.lineTo(bx - z * 1.9, by - z * .1); ctx.fill();
-        ctx.fillStyle = '#F6F1E6'; ctx.beginPath(); ctx.ellipse(bx + z * .1, by + z * .18, z * .6, z * .22, -.1, 0, 6.29); ctx.fill(); }
-      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+      // Doels fly in from every side and settle on the branches
+      ctx.globalCompositeOperation = 'source-over';
+      BIRDS.forEach(bd => {
+        const p = (t - bd.t0) / bd.dur; if (p <= 0) return;
+        const px = X + bd.perch.x * S, py = Y + bd.perch.y * S, z = S * .042;
+        if (p < 1) { // flying along an arc, slowing as it lands
+          const u = 1 - Math.pow(1 - p, 2.2), sx = bd.sx * W, sy = bd.sy * H, cx = (sx + px) / 2 + bd.bend * W, cy = Math.min(sy, py) - H * .12;
+          const x = (1 - u) * (1 - u) * sx + 2 * (1 - u) * u * cx + u * u * px, y = (1 - u) * (1 - u) * sy + 2 * (1 - u) * u * cy + u * u * py;
+          const dx = 2 * (1 - u) * (cx - sx) + 2 * u * (px - cx);
+          doel(ctx, x, y, z, dx >= 0 ? 1 : -1, Math.sin(t * (p > .85 ? 30 : 20) + bd.ph), false, t);
+          bd.face = dx >= 0 ? 1 : -1;
+        } else { // perched: settle, tail flicks, little head turns
+          const land = clamp((p - 1) * bd.dur / .25), hop = Math.sin(land * Math.PI) * z * .4;
+          doel(ctx, px, py - hop, z, (t - bd.t0 - bd.dur) % 2.6 > 2.2 ? -bd.face : bd.face, 0, true, t + bd.ph);
+        }
+      });
       // vignette and the closing fade
       const vg = ctx.createRadialGradient(W / 2, H * .5, Math.min(W, H) * .3, W / 2, H * .5, Math.max(W, H) * .75); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,8,5,.55)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
       if (t >= DUR) return finish(false);
