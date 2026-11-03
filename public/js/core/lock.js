@@ -23,7 +23,7 @@ const Lock = (() => {
     const cool = Date.now() < coolUntil;
     el.innerHTML = `
       <div class="lock-in">
-        <div class="lock-brand"><img src="./icons/icon-192.png" alt=""><div><b>Affaan's World</b><span class="bn">আফফানের পৃথিবী</span></div></div>
+        <div class="lock-brand"><img src="./icons/icon-192.png" alt=""><div><b>Affaan's <em>World</em></b><span class="bn">আফফানের পৃথিবী</span></div></div>
         <h2>${titles[0]} <span class="bn">· ${titles[1]}</span></h2>
         <p class="lock-sub">${mode === 'create' ? '4–6 digits. Protects health records on this phone.' : mode === 'confirm' ? 'Type the same PIN again.' : cool ? 'Too many tries — wait a moment.' : '&nbsp;'}</p>
         <div class="dots">${Array.from({ length: Math.max(4, entered.length) }, (_, i) => `<i class="${i < entered.length ? 'on' : ''}"></i>`).join('')}</div>

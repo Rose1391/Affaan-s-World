@@ -24,23 +24,45 @@ async function route() {
   if (!kid && name === 'kid') { location.replace('#/play'); return; }
   document.body.classList.toggle('kidmode', name === 'kid');
   document.body.classList.toggle('nofab', name === 'settings');
+  document.body.dataset.sec = THEMES[name] ? name : (name === 'kid' ? 'play' : 'home');
+  if (name === 'gallery' || name === 'home' || (name === 'kid' && !params.length)) heroPhoto = (await galleryItems()).find(i => i.type === 'photo')?.photoId || null;
   const view = Views[name] || Views.home;
   if (curRoute.split('/')[0] !== name) window.scrollTo(0, 0);
   curRoute = h; Speech.stop();
   $$('#nav [data-to]').forEach(b => b.classList.toggle('on', b.dataset.to === name || (name === 'settings' && false)));
   const root = $('#view');
-  try { root.innerHTML = await view(params); } catch (e) { console.error(e); root.innerHTML = `<div class="pad"><div class="empty">Something went wrong: ${esc(e.message)}</div></div>`; }
-  Media.hydrate(root);
+  try { root.innerHTML = name === 'kid' ? await view(params) : `<div class="page ${esc(name)}">${await view(params)}</div>`; } catch (e) { console.error(e); root.innerHTML = `<div class="pad"><div class="empty">Something went wrong: ${esc(e.message)}</div></div>`; }
+  Media.hydrate(root); renderSyncDot();
   if (view.after) view.after(params);
 }
 window.addEventListener('hashchange', route);
 const rerender = debounce(() => { if (!$('#sheet.on') && !Lock.isLocked()) route(); }, 150);
 Bus.on('remote', rerender);
 
-/* ---------- page header helper ---------- */
-function pageHead(en, bn, sub = '', actions = '') {
-  return `<header class="phead"><div><h1>${esc(en)} <span class="bn">${esc(bn)}</span></h1>${sub ? `<p>${sub}</p>` : ''}</div>${actions}</header>`;
+/* ---------- section themes + hero header (Eye 3 style) ---------- */
+const THEMES = {
+  home:     { eyebrow: "Affaan's World", img: './img/bg-affaan.jpg', art: 'home', nc: '#0F6B4E' },
+  play:     { eyebrow: 'Play together', img: './img/hero-affaan.jpg', art: 'play', nc: '#6B3FB0' },
+  dev:      { eyebrow: 'Growing up', art: 'dev', nc: '#1B3A8F' },
+  health:   { eyebrow: 'Health records', art: 'health', nc: '#8B1E2D' },
+  gallery:  { eyebrow: 'Memories', art: 'gallery', nc: '#0E6B6B', photo: true },
+  reports:  { eyebrow: 'Reports', art: 'reports', nc: '#2E3A63' },
+  settings: { eyebrow: 'Settings', art: 'settings', nc: '#4A433C' }
+};
+let heroPhoto = null;
+const topActions = () => `<button id="syncDot" class="glass syncdot" data-act="go" data-to="settings"></button><button class="glass round" data-act="go" data-to="settings" aria-label="Settings">${icon('settings')}</button>`;
+// title: last word in gold italics, like “Tour in <em>Eye 3</em>”
+const emTitle = en => { const w = esc(en).split(' '); return w.length > 1 ? `${w.slice(0, -1).join(' ')} <em>${w[w.length - 1]}</em>` : `<em>${w[0]}</em>`; };
+function pageHead(en, bn, sub = '', actions = '', opt = {}) {
+  const sec = (curRoute.split('/')[0]) || 'home', t = THEMES[sec] || THEMES.home;
+  const a = ageOn(Child.birth);
+  const img = t.photo && heroPhoto ? `<img class="h-img" data-photo="${esc(heroPhoto)}" data-size="full" alt="">` : t.img ? `<div class="h-img" style="background-image:url('${t.img}')"></div>` : '';
+  return `<header class="hero2">${img}<div class="h-ov"></div><div class="h-pat"></div>${img ? '' : `<div class="h-art">${icon(t.art)}</div>`}
+    <div class="h-top">${sec !== 'home' ? `<button class="h-back" data-act="go" data-to="home">${icon('back')} Home</button>` : ''}<span class="grow"></span>${topActions()}</div>
+    <div class="h-txt"><div class="eyebrow">${opt.eyebrow || `${esc(t.eyebrow)} · ${a.y}y ${a.m}m`}</div><h1>${opt.title || emTitle(en)}</h1>${bn ? `<div class="h-bn">${esc(bn)}</div>` : ''}${sub ? `<div class="h-sub">${sub}</div>` : ''}</div>
+    ${actions ? `<div class="h-act">${actions}</div>` : ''}</header>`;
 }
+const shead = (emoji, en, bn = '', right = '') => `<div class="shead"><span class="si">${emoji}</span><h2>${en}${bn ? ` <span class="bn">${bn}</span>` : ''}</h2><span class="line"></span>${right}</div>`;
 function tabs(items, cur, act, extra = '') {
   return `<div class="seg" role="tablist">${items.map(([id, en, bn]) => `<button role="tab" class="${id === cur ? 'on' : ''}" data-act="${act}" data-v="${id}" ${extra}>${esc(en)}${bn ? ` <span class="bn">${esc(bn)}</span>` : ''}</button>`).join('')}</div>`;
 }
@@ -126,8 +148,8 @@ function renderSyncDot(st = Sync.state()) {
   else if (st.running) { cls = 'busy'; t = 'Syncing…'; }
   else if (st.lastError) { cls = 'err'; t = 'Sync problem — tap for details'; }
   else { cls = 'ok'; t = 'Synced'; }
-  el.className = 'syncdot ' + cls; el.title = t; el.setAttribute('aria-label', t);
-  el.innerHTML = icon(cls === 'off' ? 'cloudOff' : 'cloud') + `<span>${cls === 'ok' ? 'Synced' : cls === 'busy' ? 'Syncing' : cls === 'err' ? 'Error' : cls === 'off' ? 'Offline' : 'Local'}</span>`;
+  el.className = 'glass syncdot ' + cls; el.title = t; el.setAttribute('aria-label', t);
+  el.innerHTML = `<i class="sdot"></i><span>${cls === 'ok' ? 'Synced' : cls === 'busy' ? 'Syncing' : cls === 'err' ? 'Sync error' : cls === 'off' ? 'Offline' : 'On device'}</span>`;
 }
 Bus.on('sync', st => { renderSyncDot(st); if (curRoute === 'settings') rerender(); });
 
@@ -164,52 +186,80 @@ Views.home = async () => {
   await Child.load();
   const a = ageOn(Child.birth), nm = await nextMilestone(), nv = await nextVaccine();
   const growth = (await DB.list('growth')).sort((x, y) => y.date.localeCompare(x.date));
-  const g = growth[0], photos = (await galleryItems()).slice(0, 8);
-  const words = await DB.list('word');
-  const month = todayISO().slice(0, 7);
-  const thisMonth = (await DB.allRecords()).filter(r => !r.deleted && r.updatedAt.slice(0, 7) === month && !['photo', 'kv', 'settings', 'playsession'].includes(r.kind)).length;
+  const gw = growth.find(x => x.weight != null), gh = growth.find(x => x.height != null);
+  const items = await galleryItems(), photos = items.slice(0, 10);
+  const words = await DB.list('word'), msAll = (await DB.list('milestone')).filter(m => m.achieved);
+  const ev = (await timelineEvents()).slice(0, 4);
   const h = new Date().getHours(), greet = h < 12 ? ['Good morning', 'সুপ্রভাত'] : h < 17 ? ['Good afternoon', 'শুভ অপরাহ্ন'] : ['Good evening', 'শুভ সন্ধ্যা'];
-  return `
-  <section class="hero">
-    <div class="hero-txt">
-      <p class="eyebrow">${greet[0]} · <span class="bn">${greet[1]}</span></p>
-      <h1>${esc(Child.name)}</h1>
-      <p class="age">${ageText(a)}</p>
-      <p class="age bn">${ageTextBn(a)}</p>
-      <p class="dayn">Day ${a.days.toLocaleString()} · <span class="bn">${bnNum(a.days)} তম দিন</span></p>
+  // next birthday countdown
+  const b = parseDate(Child.birth); let nb = new Date(new Date().getFullYear(), b.getMonth(), b.getDate()); if (nb < parseDate(todayISO())) nb = new Date(nb.getFullYear() + 1, b.getMonth(), b.getDate());
+  const toBday = daysBetween(new Date(), nb), turning = nb.getFullYear() - b.getFullYear(), bdayPct = Math.max(3, Math.min(100, (365 - toBday) / 365 * 100));
+  const band = nm ? nm.band : null, bandDone = band ? band.items.length - nm.left : 0;
+  const epi = EPI.filter(v => v.group === 'epi'), vxm = await vaccineMap(), epiDone = epi.filter(v => vxm[v.id]?.given).length;
+  const [first, ...rest] = esc(Child.name).split(' ');
+  const nW = words.filter(w => w.type !== 'skill').length, nBn = words.filter(w => w.type !== 'skill' && w.lang === 'bn').length;
+  const lastWord = words.filter(w => w.type !== 'skill').sort((x, y) => y.date.localeCompare(x.date))[0];
+  return `${pageHead(Child.name, Child.nameBn, '', '', { eyebrow: `${greet[0]} · <span class="bn">${greet[1]}</span>`, title: `${first} <em>${rest.join(' ')}</em>` })}
+  <div class="agecard" role="group" aria-label="Age today">
+    <div class="agerow">
+      <div><div class="n">${a.y}</div><div class="u">${a.y === 1 ? 'year' : 'years'}</div><div class="u bn">${bnNum(a.y)} বছর</div></div><span class="sep"></span>
+      <div><div class="n">${a.m}</div><div class="u">${a.m === 1 ? 'month' : 'months'}</div><div class="u bn">${bnNum(a.m)} মাস</div></div><span class="sep"></span>
+      <div><div class="n">${a.d}</div><div class="u">${a.d === 1 ? 'day' : 'days'}</div><div class="u bn">${bnNum(a.d)} দিন</div></div>
+      <div class="dayn"><div class="eyebrow">Day</div><div class="mono">${a.days.toLocaleString()}</div><div class="u bn">${bnNum(a.days)} তম দিন</div></div>
     </div>
-    <img class="hero-img" src="./img/hero-affaan.jpg" alt="">
-  </section>
-  <div class="pad stack">
-    <button class="playcta" data-act="go" data-to="play">
-      <span class="pc-ic">${icon('play')}</span>
-      <span><b>Play together</b><span class="bn">একসাথে খেলি</span><small>Letters, numbers, stories · 10–15 min</small></span>
-    </button>
-    <div class="cards2">
-      <button class="card watch" data-act="go" data-to="dev/milestones/${nm ? nm.band.id : ''}">
-        <span class="k">${icon('star')} ${nm && nm.overdue ? 'Check this milestone' : 'Next milestone to watch'}</span>
-        ${nm ? `<b>${esc(nm.item.en)}</b><span class="bn sm">${esc(nm.item.bn)}</span>
-          <span class="meta"><i class="tagdot" style="background:${DEV_TAGS[nm.item.tag].color}"></i>${DEV_TAGS[nm.item.tag].en} · by ${nm.band.en} · ${nm.left} left in band</span>` : '<b>All CDC milestones to 5 years recorded 🎉</b>'}
+    <div class="agebar"><span>🎂</span><div class="meter"><i style="width:${bdayPct}%"></i></div><span>${toBday === 0 ? `<b>Happy birthday!</b>` : `<b class="mono">${toBday}</b> days to his ${ordinal(turning)}`}</span></div>
+  </div>
+  <div class="pad">
+    <div class="jgrid" style="margin-top:6px">
+      <button class="jtile" data-act="go" data-to="play">
+        <div class="j-img" style="background-image:url('./img/hero-affaan.jpg')"></div><div class="j-ov" style="background:linear-gradient(165deg,rgba(42,27,107,.55),rgba(107,63,176,.9))"></div>
+        <div class="j-in"><div><div class="eyebrow">Together · 10–15 min</div><b>Play</b><div class="jbn">একসাথে খেলি</div></div>
+          <div><div class="jmeta">Letters · numbers · stories · bubbles</div><span class="jopen">Start ${icon('arrow')}</span></div></div>
       </button>
-      <button class="card" data-act="go" data-to="health/vaccines">
-        <span class="k">${icon('syringe')} Vaccines · <span class="bn">টিকা</span></span>
-        ${nv.overdue.length ? `<b class="warn">${nv.overdue.length} not yet recorded</b><span class="sm">Oldest: ${esc(nv.overdue[0].v.en)} (due ${fmtDate(nv.overdue[0].due)})</span>`
-      : nv.next ? `<b>${esc(nv.next.v.en)}</b><span class="sm">Due ${fmtDate(nv.next.due)}</span>` : '<b>All recorded ✓</b>'}
-      </button>
-      <button class="card" data-act="go" data-to="dev/growth">
-        <span class="k">${icon('ruler')} Growth · <span class="bn">বৃদ্ধি</span></span>
-        ${g ? `<b>${g.weight ? g.weight + ' kg' : ''}${g.weight && g.height ? ' · ' : ''}${g.height ? g.height + ' cm' : ''}${!g.weight && !g.height && g.head ? 'Head ' + g.head + ' cm' : ''}</b><span class="sm">${fmtDate(g.date)}</span>` : '<b>No measurements yet</b><span class="sm">Add weight & height</span>'}
-      </button>
-      <button class="card" data-act="go" data-to="dev/words">
-        <span class="k">${icon('chat')} Words & skills · <span class="bn">শব্দ</span></span>
-        <b>${words.filter(w => w.type !== 'skill').length} words · ${words.filter(w => w.type === 'skill').length} skills</b><span class="sm">${thisMonth} records this month</span>
+      <button class="jtile" data-act="go" data-to="gallery">
+        ${photos[0] && photos[0].type === 'photo' ? `<img class="j-img" data-photo="${esc(photos[0].photoId)}" alt="">` : `<div class="j-img" style="background-image:url('./img/bg-affaan.jpg')"></div>`}<div class="j-ov" style="background:linear-gradient(165deg,rgba(11,70,82,.35),rgba(14,107,107,.9))"></div>
+        <div class="j-in"><div><div class="eyebrow">Memories</div><b>Gallery</b><div class="jbn">গ্যালারি</div></div>
+          <div><div class="jmeta">${items.length} photos & videos</div><span class="jopen">Open ${icon('arrow')}</span></div></div>
       </button>
     </div>
-    <div class="sec-h"><h2>Latest photos <span class="bn">সাম্প্রতিক ছবি</span></h2><button class="linkbtn" data-act="go" data-to="gallery">See all</button></div>
+
+    ${shead('🌱', 'Watch next', 'পরবর্তী')}
+    <div class="wgrid2">
+      <button class="card wcard2 full" data-act="go" data-to="dev/milestones/${band ? band.id : ''}" style="--wc:${nm ? DEV_TAGS[nm.item.tag].color : 'var(--ok)'}">
+        <span class="wk">${nm && nm.overdue ? 'Check this milestone' : 'Next milestone'} · ${nm ? DEV_TAGS[nm.item.tag].en : ''}${icon('star')}</span>
+        ${nm ? `<b>${esc(nm.item.en)}</b><span class="bn sm" style="color:var(--slate)">${esc(nm.item.bn)}</span>
+          <span class="sm">by ${band.en} · ${bandDone}/${band.items.length} recorded</span><div class="meter"><i style="width:${bandDone / band.items.length * 100}%"></i></div>` : '<b>All CDC milestones to 5 years recorded 🎉</b>'}
+      </button>
+      <button class="card wcard2" data-act="go" data-to="health/vaccines" style="--wc:${nv.overdue.length ? 'var(--red)' : 'var(--ok)'}">
+        <span class="wk">Vaccines ${icon('syringe')}</span>
+        ${nv.overdue.length ? `<b>${nv.overdue.length} EPI ${nv.overdue.length === 1 ? 'dose' : 'doses'} to record</b><span class="sm">from his EPI card</span>`
+      : nv.next ? `<b>${esc(nv.next.v.en)}</b><span class="sm mono">due ${fmtDate(nv.next.due)}</span>` : '<b>EPI complete ✓</b><span class="sm">all routine doses</span>'}
+        <div class="meter"><i style="width:${epiDone / epi.length * 100}%"></i></div>
+      </button>
+      <button class="card wcard2" data-act="go" data-to="dev/growth" style="--wc:var(--blue)">
+        <span class="wk">Growth ${icon('ruler')}</span>
+        ${gw || gh ? `<b><span class="mono">${gw ? gw.weight + ' kg' : ''}${gw && gh ? ' · ' : ''}${gh ? gh.height + ' cm' : ''}</span></b><span class="sm">${fmtDate((gw || gh).date)}</span>` : '<b>Add weight & height</b><span class="sm">charts build as you go</span>'}
+      </button>
+    </div>
+
+    ${ev.length ? `${shead('🕰️', 'Recently', 'সাম্প্রতিক', '<button class="linkbtn" data-act="homeTimeline">All</button>')}
+    <div class="card tlstrip">${ev.map(e => `<button class="tlrow" ${e.go ? `data-act="go" data-to="${e.go}"` : e.photo ? `data-act="viewPhoto" data-id="${esc(e.photo)}"` : ''}><span class="tagdot" style="background:${e.color}"></span><span class="d">${fmtDate(e.date).replace(/ \d{4}$/, '')}</span><span class="grow"><b>${esc(e.en)}</b><span class="s">${ageShort(Child.birth, e.date)}</span></span></button>`).join('')}</div>` : ''}
+
+    ${shead('📸', 'Latest photos', 'ছবি', '<button class="linkbtn" data-act="go" data-to="gallery">See all</button>')}
     ${photos.length ? `<div class="strip">${photos.map(p => `<button class="sthumb" data-act="viewPhoto" data-id="${esc(p.photoId)}">${Media.img(p.photoId)}${p.type === 'video' ? `<i class="vbadge">${icon('video')}</i>` : ''}</button>`).join('')}</div>`
-      : `<button class="dropzone" data-act="quickPhoto">${icon('camera')} Add his first photo · <span class="bn">প্রথম ছবি যোগ করুন</span></button>`}
+      : `<button class="dropzone" data-act="quickPhoto">${icon('camera')} Add his first photo · <span class="bn">প্রথম ছবি</span></button>`}
+
+    <div class="card story" style="margin-top:16px">
+      <div class="eyebrow">The story so far</div>
+      <p>${esc(Child.first())} is ${ageText(a)} old — day ${a.days.toLocaleString()} of his life.
+        ${msAll.length || nW || items.length ? `You've recorded <strong>${msAll.length} ${msAll.length === 1 ? 'milestone' : 'milestones'}</strong>, <strong>${nW} ${nW === 1 ? 'word' : 'words'}</strong>${nBn ? ` (${nBn} in Bangla)` : ''} and <strong>${items.length} photos</strong>.` : 'Every photo, first word and milestone you add here becomes his story.'}
+        ${lastWord ? ` His newest word: <strong>“${esc(lastWord.word)}”</strong>.` : ''}</p>
+      <p class="bn" style="margin-top:6px;font-size:12.5px">${esc(Child.nameBn || '')} — ${ageTextBn(a)}।</p>
+    </div>
   </div>`;
 };
+ACT.homeTimeline = () => { GQ.mode = 'timeline'; go('gallery'); };
+const ordinal = n => n + (['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th') + ' birthday';
 
 /* ---------- quick add ---------- */
 ACT.quickAdd = () => Sheet.open({
@@ -218,7 +268,8 @@ ACT.quickAdd = () => Sheet.open({
     ['quickPhoto', 'camera', 'Photo / video', 'ছবি / ভিডিও'], ['addGrowth', 'ruler', 'Growth', 'ওজন ও উচ্চতা'], ['addWord', 'chat', 'First word / skill', 'নতুন শব্দ'],
     ['pickMilestone', 'star', 'Milestone', 'মাইলফলক'], ['addVisit', 'steth', 'Doctor visit', 'ডাক্তার'], ['addIllness', 'thermo', 'Illness', 'অসুখ'],
     ['addDoc', 'pill', 'Prescription / report', 'প্রেসক্রিপশন'], ['pickVaccine', 'syringe', 'Vaccine given', 'টিকা'], ['addJournal', 'note', 'Journal note', 'নোট']
-  ].map(([a, i, en, bn]) => `<button type="button" class="qbtn" data-act="${a}">${icon(i)}<b>${en}</b><span class="bn">${bn}</span></button>`).join('')}</div>`
+  ].map(([a, i, en, bn], k) => { const c = ['#0E6B6B', '#1B3A8F', '#1B3A8F', '#1B3A8F', '#8B1E2D', '#8B1E2D', '#8B1E2D', '#8B1E2D', '#8A6A1F'][k];
+    return `<button type="button" class="qbtn" data-act="${a}" style="--qc:${c};--qc-soft:${c}17"><span class="qi">${icon(i)}</span><b>${en}</b><span class="bn">${bn}</span></button>`; }).join('')}</div>`
 });
 
 /* ================= SETTINGS ================= */
@@ -234,7 +285,7 @@ Views.settings = async () => {
   const pct = used ? Math.min(100, used.bytes / 1073741824 * 100) : 0;
   const vi = Speech.voiceInfo();
   const me = fam.members.find(m => m.email === st.email);
-  return `${pageHead('Settings', 'সেটিংস')}
+  return `${pageHead('Settings', 'সেটিংস', 'Sync · backup · security · sound')}
   <div class="pad stack">
     <section class="panel"><h3>Child · <span class="bn">শিশু</span></h3>
       <form class="inline-form" data-form="child">
@@ -361,9 +412,8 @@ async function boot() {
   await Child.load();
   Sync.init().catch(e => console.warn(e));
   $('#nav').innerHTML = [['home', 'home', 'Home', 'হোম'], ['play', 'play', 'Play', 'খেলা'], ['dev', 'dev', 'Growth', 'বিকাশ'], ['health', 'health', 'Health', 'স্বাস্থ্য'], ['gallery', 'gallery', 'Gallery', 'গ্যালারি'], ['reports', 'reports', 'Reports', 'রিপোর্ট']]
-    .map(([to, ic, en, bn]) => `<button data-act="go" data-to="${to}">${icon(ic)}<span>${en}</span><span class="bn">${bn}</span></button>`).join('');
-  $('#topActions').innerHTML = `<button id="syncDot" class="syncdot" data-act="go" data-to="settings"></button><button class="iconbtn" data-act="go" data-to="settings" aria-label="Settings">${icon('settings')}</button>`;
-  $('#fab').innerHTML = icon('plus'); renderSyncDot();
+    .map(([to, ic, en, bn]) => `<button data-act="go" data-to="${to}" style="--nc:${THEMES[to].nc};--ns:${THEMES[to].nc}1C"><span class="nwrap">${icon(ic)}</span><span>${en}</span><span class="bn">${bn}</span></button>`).join('');
+  $('#fab').innerHTML = icon('plus');
   Lock.start(async () => { await migrateV4(); route(); });
   Bus.on('unlocked', () => route());
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { });

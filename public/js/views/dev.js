@@ -62,7 +62,7 @@ ACT.pickMilestone = async () => {
   const bands = CDC_BANDS.filter(b => b.months <= CDC_BANDS.find(x => x.id === cur).months + 12);
   Sheet.open({
     title: 'Which milestone? · <span class="bn">কোন মাইলফলক?</span>',
-    body: bands.map(b => `<h4 class="subh">${b.en} · <span class="bn">${b.bn}</span></h4>${b.items.filter(i => !ms[i.id]?.achieved).map(i => `<button type="button" class="pickrow" data-act="pickMs" data-id="${i.id}"><i class="tagdot" style="background:${DEV_TAGS[i.tag].color}"></i>${esc(i.en)}</button>`).join('') || '<p class="muted sm">All recorded ✓</p>'}`).join('')
+    body: bands.map(b => `<h4 class="subh">${b.en} <span class="bn">${b.bn}</span></h4>${b.items.filter(i => !ms[i.id]?.achieved).map(i => `<button type="button" class="pickrow" data-act="pickMs" data-id="${i.id}"><i class="tagdot" style="background:${DEV_TAGS[i.tag].color}"></i>${esc(i.en)}</button>`).join('') || '<p class="muted sm">All recorded ✓</p>'}`).join('')
   });
 };
 ACT.pickMs = el => { Sheet.close(); milestoneSheet(el.dataset.id); };
@@ -137,7 +137,7 @@ async function wordsHTML() {
   </form>
   <div class="stats3"><div><b>${nW}</b><span>words · <span class="bn">শব্দ</span></span></div><div><b>${all.filter(w => w.type !== 'skill' && w.lang === 'bn').length}</b><span>বাংলা</span></div><div><b>${all.filter(w => w.type === 'skill').length}</b><span>skills · <span class="bn">দক্ষতা</span></span></div></div>
   <div class="chips filt">${[['all', 'All'], ['word', 'Words'], ['en', 'English'], ['bn', 'বাংলা'], ['skill', 'Skills']].map(([k, l]) => `<button class="chip ${wordFilter === k ? 'on' : ''}" data-act="wordFilt" data-v="${k}">${l}</button>`).join('')}</div>
-  ${Object.keys(byMonth).length ? Object.entries(byMonth).map(([m, ws]) => `<h4 class="subh">${fmtMonth(m)} · <span class="bn">${fmtMonthBn(m)}</span> <span class="muted">(${ws.length})</span></h4>
+  ${Object.keys(byMonth).length ? Object.entries(byMonth).map(([m, ws]) => `<h4 class="subh">${fmtMonth(m)} <span class="bn">${fmtMonthBn(m)}</span> <span class="muted">(${ws.length})</span></h4>
     <div class="wordcloud">${ws.map(w => `<button class="wchip ${w.type === 'skill' ? 'skill' : ''} ${w.lang === 'bn' ? 'bn' : ''}" data-act="wordEdit" data-id="${w.id}" title="${fmtDate(w.date)}">${esc(w.word)}</button>`).join('')}</div>`).join('')
     : empty('Log his first words and new skills here — they become a lovely timeline.', 'তার প্রথম শব্দগুলো এখানে লিখে রাখুন')}`;
 }

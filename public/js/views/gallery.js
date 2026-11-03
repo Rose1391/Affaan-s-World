@@ -17,10 +17,10 @@ Views.gallery = async () => {
   else if (!items.length) body = all.length ? empty('No photos match.', 'মিলছে না') : `<label class="dropzone big">${icon('camera')}<b>Add photos & videos</b><span class="bn">ছবি ও ভিডিও যোগ করুন</span><input type="file" accept="image/*,video/*" multiple data-change="gPick" hidden></label>`;
   else {
     const by = {}; items.forEach(i => (by[(i.date || '????-??').slice(0, 7)] = by[(i.date || '????-??').slice(0, 7)] || []).push(i));
-    body = Object.entries(by).map(([m, list]) => `<h4 class="subh">${m.includes('?') ? 'Undated' : fmtMonth(m) + ' · <span class="bn">' + fmtMonthBn(m) + '</span>'} <span class="muted">${list.length}</span></h4>
+    body = Object.entries(by).map(([m, list]) => `<h4 class="subh">${m.includes('?') ? 'Undated' : fmtMonth(m) + ' <span class="bn">' + fmtMonthBn(m) + '</span>'} <span class="muted">${list.length}</span></h4>
       <div class="ggrid">${list.map(i => `<button class="gt" data-act="viewPhoto" data-id="${esc(i.photoId)}">${Media.img(i.photoId)}${i.type === 'video' ? `<i class="vbadge">${icon('video')}</i>` : ''}${i.milestoneId ? `<i class="mbadge">${icon('star')}</i>` : ''}</button>`).join('')}</div>`).join('');
   }
-  return `${pageHead('Gallery & timeline', 'গ্যালারি ও সময়রেখা', '', `<label class="btn primary sm">${icon('camera')} Add<input type="file" accept="image/*,video/*" multiple data-change="gPick" hidden></label>`)}
+  return `${pageHead('Gallery & timeline', 'গ্যালারি ও সময়রেখা', `${all.length} photos & videos · ${months.length} months`, `<label class="btn sm">${icon('camera')} Add<input type="file" accept="image/*,video/*" multiple data-change="gPick" hidden></label>`)}
   <div class="pad">${tabs([['photos', 'Photos', 'ছবি'], ['timeline', 'Timeline', 'সময়রেখা']], GQ.mode, 'gMode')}${GQ.mode === 'photos' ? filters : ''}${body}</div>`;
 };
 ACT.gMode = el => { GQ.mode = el.dataset.v; route(); };
@@ -82,9 +82,10 @@ ACT.viewPhoto = async el => {
 ACT.dlOriginal = async el => { const b = await DB.blob.get(el.dataset.id); const ext = (b.mime || 'image/jpeg').split('/')[1].replace('jpeg', 'jpg').replace('quicktime', 'mov'); downloadBlob(b.original, `affaan-${el.dataset.id.slice(0, 8)}.${ext}`); };
 
 /* ---------- timeline: everything, by date ---------- */
-async function timelineHTML() {
+const EV_COLORS = { camera: '#0E8C8C', star: '#1B8A5A', chat: '#1B3A8F', ruler: '#1B3A8F', syringe: '#8B1E2D', steth: '#8B1E2D', thermo: '#A82838', note: '#C9A14A' };
+async function timelineEvents() {
   const ev = [];
-  const push = (date, ic, en, sub = '', photo = '', go = '') => date && ev.push({ date, ic, en, sub, photo, go });
+  const push = (date, ic, en, sub = '', photo = '', go = '') => date && ev.push({ date, ic, en, sub, photo, go, color: EV_COLORS[ic] || '#8C857F' });
   for (const g of await galleryItems()) if (g.src === 'media') push(g.date, 'camera', g.caption || (g.type === 'video' ? 'Video' : 'Photo'), (g.tags || []).map(t => '#' + t).join(' '), g.photoId);
   for (const m of await DB.list('milestone')) if (m.achieved) { const it = CDC_BY_ID[m.id.slice(3)]; push(m.achieved, 'star', it?.en || 'Milestone', `<span class="bn">${esc(it?.bn || '')}</span>`, (m.photoIds || [])[0], 'dev/milestones/' + m.band); }
   for (const w of await DB.list('word')) push(w.date, 'chat', `${w.type === 'skill' ? 'New skill' : 'New word'}: “${w.word}”`, '', '', 'dev/words');
@@ -94,9 +95,12 @@ async function timelineHTML() {
   for (const v of await DB.list('visit')) push(v.date, 'steth', 'Doctor visit: ' + (v.reason || ''), esc(v.doctor || ''), '', 'health/visits');
   for (const i of await DB.list('illness')) push(i.start, 'thermo', 'Illness: ' + i.name, '', '', 'health/illness');
   for (const j of await DB.list('journal')) push(j.date, 'note', j.title, esc(j.type || ''), (j.photoIds || [])[0], 'dev/journal');
-  ev.sort((a, b) => b.date.localeCompare(a.date));
+  return ev.sort((a, b) => b.date.localeCompare(a.date));
+}
+async function timelineHTML() {
+  const ev = await timelineEvents();
   if (!ev.length) return empty('Your timeline fills up as you add photos, milestones, words and health records.', 'সবকিছু তারিখ অনুযায়ী এখানে দেখা যাবে');
   let lastM = '';
-  return `<div class="timeline">${ev.slice(0, 400).map(e => { const m = e.date.slice(0, 7); const h = m !== lastM ? `<h4 class="subh">${fmtMonth(m)} · <span class="bn">${fmtMonthBn(m)}</span></h4>` : ''; lastM = m;
-    return `${h}<button class="tl" ${e.photo && !e.go ? `data-act="viewPhoto" data-id="${esc(e.photo)}"` : e.go ? `data-act="go" data-to="${e.go}"` : ''}><span class="tl-ic">${icon(e.ic)}</span><span class="grow"><b>${esc(e.en)}</b><span class="sm muted">${fmtDate(e.date)} · ${ageShort(Child.birth, e.date)}${e.sub ? ' · ' + e.sub : ''}</span></span>${e.photo ? Media.img(e.photo, 'thumb', 'tl-ph') : ''}</button>`; }).join('')}</div>`;
+  return `<div class="timeline">${ev.slice(0, 400).map(e => { const m = e.date.slice(0, 7); const h = m !== lastM ? `<h4 class="subh">${fmtMonth(m)} <span class="bn">${fmtMonthBn(m)}</span></h4>` : ''; lastM = m;
+    return `${h}<button class="tl" ${e.photo && !e.go ? `data-act="viewPhoto" data-id="${esc(e.photo)}"` : e.go ? `data-act="go" data-to="${e.go}"` : ''}><span class="tl-ic" style="background:${e.color}17;color:${e.color}">${icon(e.ic)}</span><span class="grow"><b>${esc(e.en)}</b><span class="sm muted">${fmtDate(e.date)} · ${ageShort(Child.birth, e.date)}${e.sub ? ' · ' + e.sub : ''}</span></span>${e.photo ? Media.img(e.photo, 'thumb', 'tl-ph') : ''}</button>`; }).join('')}</div>`;
 }

@@ -3,7 +3,7 @@ let repMonth = todayISO().slice(0, 7);
 Views.reports = async ([tab = 'monthly']) => {
   const t = [['monthly', 'Monthly', 'মাসিক'], ['doctor', 'For the paediatrician', 'ডাক্তারের জন্য'], ['learning', 'Learning', 'শেখা']];
   const body = tab === 'doctor' ? await doctorPreview() : tab === 'learning' ? await learningHTML() : await monthlyHTML();
-  return `${pageHead('Reports', 'রিপোর্ট')}<div class="pad">${tabs(t, tab, 'repTab')}${body}</div>`;
+  return `${pageHead('Reports', 'রিপোর্ট', 'Monthly story · paediatrician summary · learning')}<div class="pad">${tabs(t, tab, 'repTab')}${body}</div>`;
 };
 ACT.repTab = el => go('reports/' + el.dataset.v);
 ACT.repMonth = el => { repMonth = el.value; route(); };
@@ -130,7 +130,7 @@ async function learningHTML() {
   const total = ss.reduce((a, s) => a + s.minutes, 0), days = new Set(ss.map(s => s.date)).size;
   const per = []; for (let i = 6; i >= 0; i--) { const k = isoDate(addDays(new Date(), -i)); per.push({ k, min: ss.filter(s => s.date === k).reduce((a, s) => a + s.minutes, 0) }); }
   const taps = {}; ss.forEach(s => Object.entries(s.taps || {}).forEach(([k, n]) => taps[k] = (taps[k] || 0) + n));
-  const area = { letters_en: 'English letters', letters_bn_v: 'Bangla vowels', letters_bn_c: 'Bangla consonants', numbers: 'Numbers', colors: 'Colours', shapes: 'Shapes', world: 'Our World', people: 'Great People', stories: 'Stories', play: 'Games' };
+  const area = { letters_en: 'English letters', letters_bn_v: 'Bangla vowels', letters_bn_c: 'Bangla consonants', numbers: 'Numbers', colors: 'Colours', shapes: 'Shapes', world: 'Our World', people: 'Great People', stories: 'Stories', play: 'Games', bubbles: 'Bubble Pop', peekaboo: 'Peekaboo' };
   const rows = Object.keys(area).map(k => ({ l: area[k], n: taps[k] || 0 })).filter(r => r.n).sort((a, b) => b.n - a.n);
   const maxW = Math.max(1, ...per.map(p => p.min)), maxT = Math.max(1, ...rows.map(r => r.n));
   const spark = Object.values(await KV.get('sparkDone', {})).filter(a => a.length).length, read = Object.keys(await KV.get('readDays', {})).length;

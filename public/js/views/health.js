@@ -3,7 +3,7 @@ let showOptional = false;
 Views.health = async ([tab = 'vaccines']) => {
   const t = [['vaccines', 'Vaccines', 'টিকা'], ['visits', 'Doctor visits', 'ডাক্তার'], ['docs', 'Prescriptions & reports', 'প্রেসক্রিপশন'], ['illness', 'Illnesses', 'অসুখ'], ['diet', 'Meals & diet', 'খাদ্য']];
   const body = tab === 'visits' ? await visitsHTML() : tab === 'docs' ? await docsHTML() : tab === 'illness' ? await illnessHTML() : tab === 'diet' ? dietHTML() : await vaccinesHTML();
-  return `${pageHead('Health records', 'স্বাস্থ্য রেকর্ড')}<div class="pad">${tabs(t, tab, 'healthTab')}${body}</div>`;
+  return `${pageHead('Health records', 'স্বাস্থ্য রেকর্ড', 'Vaccines · visits · medicines · illnesses · diet')}<div class="pad">${tabs(t, tab, 'healthTab')}${body}</div>`;
 };
 ACT.healthTab = el => go('health/' + el.dataset.v);
 
@@ -24,9 +24,9 @@ async function vaccinesHTML() {
   return `
   <div class="stats3"><div><b>${epiDone}/${epi.length}</b><span>EPI doses recorded</span></div><div><b>${EPI.filter(v => v.group === 'epi' && !done[v.id]?.given && vaccineDue(v) < t).length}</b><span>EPI not recorded (past due)</span></div><div><b>${(() => { const n = EPI.filter(v => v.group !== 'optional' && !done[v.id]?.given && vaccineDue(v) >= t).sort((a, b) => vaccineDue(a).localeCompare(vaccineDue(b)))[0]; return n ? fmtDate(vaccineDue(n)) : '—'; })()}</b><span>next due</span></div></div>
   <p class="muted sm">Copy the dates from his EPI card. Tap a dose to record it — the date defaults to the due date. <button class="linkbtn" data-act="vaxBulk">Mark all past EPI doses as given…</button></p>
-  ${groups.map(g => `<h4 class="subh">${EPI_GROUPS[g].en} · <span class="bn">${EPI_GROUPS[g].bn}</span></h4><div class="list">${EPI.filter(v => v.group === g).map(row).join('')}</div>`).join('')}
+  ${groups.map(g => `<h4 class="subh">${EPI_GROUPS[g].en} <span class="bn">${EPI_GROUPS[g].bn}</span></h4><div class="list">${EPI.filter(v => v.group === g).map(row).join('')}</div>`).join('')}
   <label class="switch sm"><input type="checkbox" data-change="toggleOptional" ${showOptional ? 'checked' : ''}><span></span> Show optional / private vaccines</label>
-  <h4 class="subh">Other vaccines · <span class="bn">অন্যান্য টিকা</span></h4>
+  <h4 class="subh">Other vaccines <span class="bn">অন্যান্য টিকা</span></h4>
   <div class="list">${custom.map(c => `<button class="vrow ${c.given ? 'done' : 'up'}" data-act="vaxCustom" data-id="${c.id}"><span class="vdot">${c.given ? icon('check') : ''}</span><span class="grow"><b>${esc(c.name)}</b><span class="sm muted">${c.given ? 'Given ' + fmtDate(c.given) : 'Due ' + fmtDate(c.due)}${c.place ? ' · ' + esc(c.place) : ''}</span></span></button>`).join('')}</div>
   <button class="ghostadd" data-act="vaxCustom">+ Add another vaccine · <span class="bn">অন্য টিকা যোগ করুন</span></button>
   <p class="muted sm">Schedule: Bangladesh EPI (DGHS). Campaign dates are approximate. Not medical advice — follow the EPI card and your paediatrician.</p>`;

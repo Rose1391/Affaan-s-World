@@ -14,6 +14,16 @@ It’s a vanilla HTML/CSS/JS installable PWA with no framework and no build step
 | **Reports** | Monthly summary, a printable **paediatrician summary** (Print → Save as PDF), and the Learning report (the v4 progress report) |
 | **Settings** | Child profile, sync and account, second-parent invite, storage used vs 1 GB, **Backup now / Restore**, PIN and auto-lock, voice check |
 
+## What's new in v5.1 — design & "baby attraction"
+- **Eye 3 design language:** Fraunces display type with gold italics, Outfit body, mono numbers, and photo or patterned gradient heroes on every section (a nakshi-kantha–style gold motif), each section in its own tone. Also gold-ruled section heads, sticky pill tabs, a frosted nav with a gold border, and a new Home: age card, a countdown to his next birthday, Play and Gallery tiles, a "Watch next" area, a "Recently" timeline and "The story so far".
+- **Kid mode rebuilt for a 2-year-old:**
+  - **Doel**, the national bird, is his play buddy: it hops, blinks and chirps.
+  - His own photo greets him, and the big 3D tiles wiggle.
+  - Each tap sends a ⭐ flying into his star counter, and correct answers bring confetti and happy sounds (synthesized offline).
+  - The "Time to play outside" screen celebrates the stars he earned.
+  - Two new toddler games: **Bubble Pop**, where each bubble says its colour in English or বাংলা, and **Peekaboo**, where lifting the curtain reveals an animal named in both languages.
+- Fonts are bundled in `public/fonts` (SIL OFL), so everything still works offline.
+
 ## How the data works
 
 - **Offline first.** Everything lives in IndexedDB on the phone, and the app works with no internet. The service worker caches the whole app.
