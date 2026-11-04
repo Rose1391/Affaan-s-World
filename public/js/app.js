@@ -29,7 +29,7 @@ async function route() {
   const view = Views[name] || Views.home;
   const prevSec = curRoute.split('/')[0];
   if (prevSec !== name) { window.scrollTo(0, 0); if (prevSec && name !== 'kid' && prevSec !== 'kid') Motion.wipe(); }
-  clearInterval(window._homeTimer); if (window._homeScene) { window._homeScene.stop(); window._homeScene = null; }
+  clearInterval(window._homeTimer); if (window.GlobeView && !location.hash.includes('kid/explore')) GlobeView.stop(); if (window._homeScene) { window._homeScene.stop(); window._homeScene = null; }
   curRoute = h; Speech.stop();
   $$('#nav [data-to]').forEach(b => b.classList.toggle('on', b.dataset.to === name || (name === 'settings' && false)));
   const root = $('#view');

@@ -191,10 +191,12 @@ Views.kid = async (p) => {
   if (sub === 'sorter') return kidShell(sorterHTML(), { title: 'Shapes<br><span class="bn">আকার</span>', color: '#5B3E96' });
   if (sub === 'music') return kidShell(musicHTML(), { title: 'Music<br><span class="bn">গান-বাজনা</span>', color: '#B0651A' });
   if (sub === 'art') return kidShell(artHTML(), { title: 'Paint<br><span class="bn">আঁকি</span>', color: '#B03A6E' });
+  if (sub === 'explore') return kidShell(exploreHTML(), { title: 'World Explorer<br><span class="bn">বিশ্ব ভ্রমণ</span>', color: '#1F5E9A' });
   return kidShell(await islandHTML(), { back: false });
 };
 Views.kid.after = (p) => {
   Kid.ensureTimer();
+  if (p[0] === 'explore' && EX.tab === 'globe') GlobeView.mount(); else GlobeView.stop();
   if (p[0] === 'game') startGame(p[1]);
   if (p[0] === 'bubbles') startBubbles();
   if (p[0] === 'sorter') bindSorter();

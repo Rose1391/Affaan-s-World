@@ -6,10 +6,10 @@ const SPOT_LIST = [
   ['family', '🏠', "Who's this?", 'কে এটা?', '#E4573D'], ['colors', '🌈', 'Colours', 'রং', '#9B6BE0'], ['letters', '🔤', 'Letters', 'অক্ষর', '#E8473C'],
   ['stories', '📖', 'Stories', 'গল্প', '#14998C'], ['numbers', '🐟', 'Count fish', 'গুনি', '#2F7FB8'], ['world', '🐄', 'Farm & world', 'খামার', '#3DAA66'],
   ['music', '🥁', 'Music', 'গান-বাজনা', '#D9862B'], ['art', '🎨', 'Paint', 'আঁকি', '#E46A8C'], ['sorter', '🧩', 'Shapes', 'আকার', '#7A4FD8'],
-  ['peekaboo', '🙈', 'Peekaboo', 'কুক্কু', '#F57C00'], ['bubbles', '🫧', 'Bubbles', 'বুদবুদ', '#3BA7FF'], ['people', '🌟', 'Heroes', 'মহান ব্যক্তিত্ব', '#C99A00'],
+  ['peekaboo', '🙈', 'Peekaboo', 'কুক্কু', '#F57C00'], ['bubbles', '🫧', 'Bubbles', 'বুদবুদ', '#3BA7FF'], ['people', '🌟', 'Heroes', 'মহান ব্যক্তিত্ব', '#C99A00'], ['explore', '🌍', 'World', 'বিশ্ব', '#1F7AC9'],
   ['games', '🎮', 'Games', 'খেলা', '#D9467E']];
 const ISL_W = 400, ISL_H = 1110;
-const SPOTS = SPOT_LIST.map((s, i) => [...s.slice(0, 4), [92, 308, 200][i % 3], 108 + i * 72, s[4]]);
+const SPOTS = SPOT_LIST.map((s, i) => [...s.slice(0, 4), [92, 308, 200][i % 3], 104 + i * 68, s[4]]);
 const PICK_WHY = { family: 'Familiar faces and voices are what toddlers love most', colors: 'He is learning his first colour (30-month milestone)', stories: 'Two-word phrases → stories grow his sentences',
   peekaboo: 'Hide-and-reveal builds memory and joy', letters: 'Letter sounds start to click from 2½', music: 'Rhythm and cause-and-effect', sorter: 'Matching shapes builds thinking and fine motor', numbers: 'Counting together, one by one', art: 'Free scribbling builds the grip for writing', bubbles: 'Pure cause and effect — and colour words' };
 
