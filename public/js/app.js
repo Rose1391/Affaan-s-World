@@ -30,7 +30,7 @@ async function route() {
   const prevSec = curRoute.split('/')[0];
   if (prevSec !== name) { window.scrollTo(0, 0); if (prevSec && name !== 'kid' && prevSec !== 'kid') Motion.wipe(); }
   clearInterval(window._homeTimer); if (window.GlobeView && !location.hash.includes('kid/explore')) GlobeView.stop(); if (window.BdMap && !location.hash.includes('kid/bangladesh')) BdMap.stop(); if (window._homeScene) { window._homeScene.stop(); window._homeScene = null; }
-  curRoute = h; Speech.stop();
+  const routeChanged = h !== curRoute; curRoute = h; if (routeChanged) { Speech.stop(); Voice.stop(); }
   $$('#nav [data-to]').forEach(b => b.classList.toggle('on', b.dataset.to === name || (name === 'settings' && false)));
   const root = $('#view');
   try { root.innerHTML = name === 'kid' ? await view(params) : `<div class="page ${esc(name)}">${await view(params)}</div>`; } catch (e) { console.error(e); root.innerHTML = `<div class="pad"><div class="empty">Something went wrong: ${esc(e.message)}</div></div>`; }
@@ -440,9 +440,15 @@ Views.settings = async () => {
 
     <section class="panel"><h3>Sound · <span class="bn">শব্দ</span></h3>
       <div class="kv"><span>Read-aloud</span><b>${Speech.isEnabled() ? 'On' : 'Muted'} <button class="linkbtn" data-act="toggleSound">${Speech.isEnabled() ? 'Mute' : 'Turn on'}</button></b></div>
-      <div class="kv"><span>English voice</span><b>${esc(vi.en || (vi.count ? 'default' : 'loading…'))}</b></div>
-      <div class="kv"><span>Bangla voice</span><b>${vi.bn ? esc(vi.bn) : '<span class="warn">not installed</span>'}</b></div>
-      ${!vi.bn ? '<p class="muted sm">Android: Settings → Accessibility → Text-to-speech → Google → install Bangla. iPhone: Settings → Accessibility → Spoken Content → Voices → Bangla.</p>' : ''}
+      ${(() => { const opt = (base, cur) => Speech.list(base).map(v => `<option value="${esc(v.uri)}" ${v.name === cur ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+        const bnL = Speech.list('bn'), enL = Speech.list('en');
+        return `<label class="fld"><span>English voice</span><select data-change="pickVoice" data-base="en">${enL.length ? opt('en', vi.en) : '<option>loading…</option>'}</select></label>
+        <label class="fld"><span>বাংলা কণ্ঠ · Bangla voice</span><select data-change="pickVoice" data-base="bn">${bnL.length ? opt('bn', vi.bn) : '<option>No Bangla voice on this device</option>'}</select></label>
+        ${bnL.length && !/bd|bangladesh/i.test((vi.bnLang || '') + vi.bn) ? '<p class="muted sm">This Bangla voice is Indian Bangla. For a Bangladeshi accent, install “Bangla (Bangladesh)” as below.</p>' : ''}
+        ${!bnL.length || !/natural|neural|online|google/i.test(vi.bn || '') ? `<div class="note"><b>For a natural Bangladeshi Bangla voice</b><ul class="sm">
+          <li><b>Android:</b> Settings → System → Languages → Text-to-speech output → Preferred engine: <i>Speech Services by Google</i> → ⚙ → Install voice data → <i>বাংলা (বাংলাদেশ)</i>. Then close and reopen the app.</li>
+          <li><b>Laptop (Windows or Mac):</b> open the app in <i>Microsoft Edge</i> and install it from there — Edge has natural Bangladeshi voices (Nabanita, Pradeep) when online.</li>
+          <li><b>iPhone / iPad:</b> Settings → Accessibility → Spoken Content → Voices — add Bangla if it is listed. If not, record your own voice in Play → Voices: it replaces the robot voice everywhere and is the most natural of all.</li></ul></div>` : ''}`; })()}
       <div class="btnrow"><button class="btn" data-act="testVoice" data-lang="en">Test English</button><button class="btn" data-act="testVoice" data-lang="bn">বাংলা পরীক্ষা</button></div>
     </section>
 
@@ -491,7 +497,8 @@ ACT.setLockAfter = async el => { await DB.meta.set('lockAfter', Number(el.value)
 ACT.changePin = () => Lock.change();
 ACT.lockNow = () => Lock.lockNow();
 ACT.toggleSound = () => { Speech.setEnabled(!Speech.isEnabled()); route(); };
-ACT.testVoice = el => el.dataset.lang === 'bn' ? Speech.seq([['আসসালামু আলাইকুম, আফফান! চলো খেলি।', 'bn-BD', 0.85]]) : Speech.seq([['Hello Affaan! Let us play together.', 'en-US', 0.85]]);
+ACT.pickVoice = el => { Speech.setVoice(el.dataset.base, el.value); el.dataset.base === 'bn' ? Speech.seq([['আসসালামু আলাইকুম, আফফান! চলো, একসাথে খেলি।', 'bn-BD', .9]]) : Speech.seq([['Hello Affaan! Let\'s play together.', 'en-US', .9]]); };
+ACT.testVoice = el => el.dataset.lang === 'bn' ? Speech.seq([['আসসালামু আলাইকুম, আফফান! চলো, একসাথে খেলি। আজ আমরা অক্ষর, সংখ্যা আর রং শিখব।', 'bn-BD', 0.9]]) : Speech.seq([['Hello Affaan! Let us play together.', 'en-US', 0.85]]);
 ACT.persist = async () => { const ok = await navigator.storage.persist(); toast(ok ? 'Storage is now persistent' : 'Browser declined — install the app to home screen and try again'); route(); };
 ACT.eraseDevice = async () => {
   if (!confirm('Erase EVERYTHING on this device (records, photos, PIN)? Make a backup first.')) return;

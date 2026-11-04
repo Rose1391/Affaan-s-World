@@ -13,7 +13,7 @@ loadBdPics(); Bus.on('change', () => loadBdPics());
 const bdSymArt = (s, cls = '') => BD_PICS[s.k] ? `<div class="bdart photo ${cls}"><img data-photo="${esc(BD_PICS[s.k])}" data-size="full" alt="${esc(s.v)}"><span class="bdbadge">${s.k === 'flag' ? '<img src="./flags/bd.svg" alt="">' : BD_ART[s.art] || ''}</span></div>`
   : `<div class="bdart ${cls}">${s.k === 'flag' ? '<img src="./flags/bd.svg" alt="">' : BD_ART[s.art] || ''}</div>`;
 const bdDist = id => BD_DISTRICTS.find(d => d.id === id);
-const bdSayDist = d => { const v = bdDiv(d.div); Voice.say('BD:d:' + d.id, [[`${d.en}, in ${v.en} division. Famous for ${d.fact}.`, 'en-US', .88], [`${d.bn}, ${v.bn} বিভাগ। ${d.factBn}।`, 'bn-BD', .88]]); };
+const bdSayDist = d => { const v = bdDiv(d.div); return Voice.say('BD:d:' + d.id, [[`${d.en}, in ${v.en} division. Famous for ${d.fact}.`, 'en-US', .88], [`${d.bn} জেলা, ${v.bn} বিভাগে। এটি বিখ্যাত, ${d.factBn}।`, "bn-BD", .88]]); };
 
 /* ---------- illustrations for the national symbols ---------- */
 const BD_ART = {
@@ -99,10 +99,11 @@ ACT.bdTapSym = el => { const s = BD_SYMBOLS.find(x => x.k === el.dataset.k); pop
 ACT.bdAns = el => {
   const Q = BDX.quiz, fb = $('#bdFb');
   if (el.dataset.v === Q.ans) { el.classList.add('right'); Kid.reward(el); Sfx.win && Sfx.win(); BDX.score += 2; Kid.tap('bangladesh');
-    if (Q.kind === 'symbols') { const s = BD_SYMBOLS.find(x => x.k === Q.ans); fb.innerHTML = `✓ ${esc(s.v)} · <span class="bn">${esc(s.vBn)}</span>`; Voice.say('BD:s:' + s.k, [[`Our ${s.t.toLowerCase()} is ${s.v}.`, 'en-US', .88], [`আমাদের ${s.tBn} ${s.vBn}।`, 'bn-BD', .88]]); }
-    else if (Q.kind === 'divisions') { const v = bdDiv(Q.ans); fb.innerHTML = `✓ ${esc(v.en)} · <span class="bn">${esc(v.bn)}</span>`; bdSayDist(bdDist(Q.q)); }
-    else { const d = bdDist(Q.ans); fb.innerHTML = `✓ ${esc(d.en)} · <span class="bn">${esc(d.bn)}</span>`; bdSayDist(d); }
-    setTimeout(() => { if (BDX.mode !== 'quiz') return; BDX.quiz = null; route(); }, 2600);
+    let said;
+    if (Q.kind === 'symbols') { const s = BD_SYMBOLS.find(x => x.k === Q.ans); fb.innerHTML = `✓ ${esc(s.v)} · <span class="bn">${esc(s.vBn)}</span>`; said = Voice.say('BD:s:' + s.k, [[`Our ${s.t.toLowerCase()} is ${s.v}.`, 'en-US', .88], [`আমাদের ${s.tBn} ${s.vBn}।`, 'bn-BD', .88]]); }
+    else if (Q.kind === 'divisions') { const v = bdDiv(Q.ans); fb.innerHTML = `✓ ${esc(v.en)} · <span class="bn">${esc(v.bn)}</span>`; said = bdSayDist(bdDist(Q.q)); }
+    else { const d = bdDist(Q.ans); fb.innerHTML = `✓ ${esc(d.en)} · <span class="bn">${esc(d.bn)}</span>`; said = bdSayDist(d); }
+    Promise.all([said, new Promise(r => setTimeout(r, 1400))]).then(() => setTimeout(() => { if (BDX.mode !== 'quiz' || BDX.quiz !== Q) return; BDX.quiz = null; route(); }, 600));
   } else { el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 600); Sfx.tap(); fb.innerHTML = `Try again · <span class="bn">আবার চেষ্টা করো</span>`; }
 };
 ACT.bdAnthem = () => { const lis = $$('.bdlyr li'); Voice.play('BD:anthem'); const per = 5200; lis.forEach((li, i) => setTimeout(() => { lis.forEach(x => x.classList.remove('on')); li.classList.add('on'); }, i * per)); };

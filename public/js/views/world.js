@@ -13,7 +13,7 @@ const exSay = (c, tab) => {
   const parts = tab === 'capitals' ? [[`The capital of ${c.en} is ${c.cap}.`, 'en-US', .88], [`${bnOf(c.bn)} রাজধানী ${c.capBn}।`, 'bn-BD', .88]]
     : tab === 'currency' ? [[`${c.en} uses the ${c.cur}.`, 'en-US', .88], [`${bnOf(c.bn)} মুদ্রা ${c.curBn}।`, 'bn-BD', .88]]
     : [[c.en + '.', 'en-US', .85], [c.bn + '।', 'bn-BD', .85]];
-  Voice.say(`CT:${tab}:${c.id}`, parts);
+  return Voice.say(`CT:${tab}:${c.id}`, parts);
 };
 
 function exploreHTML() {
@@ -62,8 +62,8 @@ ACT.exAns = el => {
   if (el.dataset.id === EX.quiz.ans) {
     el.classList.add('right'); Kid.reward(el); Sfx.win && Sfx.win(); EX.score += EX.quiz.tries ? 1 : 2;
     if (fb) fb.innerHTML = `✓ ${esc(EX.tab === 'capitals' ? c.cap : EX.tab === 'currency' ? c.cur : c.en)} · <span class="bn">${esc(EX.tab === 'capitals' ? c.capBn : EX.tab === 'currency' ? c.curBn : c.bn)}</span>`;
-    exSay(c, EX.tab); Kid.tap('explore');
-    setTimeout(() => { if (EX.mode !== 'quiz') return; EX.quiz = null; route(); }, 2300);
+    Kid.tap('explore'); const q = EX.quiz;
+    Promise.all([exSay(c, EX.tab), new Promise(r => setTimeout(r, 1400))]).then(() => setTimeout(() => { if (EX.mode !== 'quiz' || EX.quiz !== q) return; EX.quiz = null; route(); }, 600));
   } else { EX.quiz.tries++; el.classList.add('wrong'); setTimeout(() => el.classList.remove('wrong'), 600); Sfx.tap();
     if (fb) fb.innerHTML = `Try again · <span class="bn">আবার চেষ্টা করো</span>`; }
 };

@@ -11,6 +11,7 @@ const Voice = (() => {
   Bus.on('remote', () => load());
   const has = key => !!map[key];
   const count = () => Object.keys(map).length;
+  const idle = () => current ? new Promise(r => { const c = current; const t = setInterval(() => { if (current !== c) { clearInterval(t); r(); } }, 150); }) : Promise.resolve();
   function stop() { if (current) { try { current.pause(); } catch (e) { } current = null; } }
   async function blob(key) {
     let b = await DB.blob.get(vid(key));
@@ -60,5 +61,5 @@ const Voice = (() => {
   async function remove(key) { await DB.blob.del(vid(key)); await DB.del(vid(key)); await load(); }
   const safe = key => key.replace(/[^\wঀ-৿:-]/g, '_').replace(/:/g, '-');
   const ext = mime => (mime || '').includes('mp4') ? 'm4a' : (mime || '').includes('ogg') ? 'ogg' : 'webm';
-  return { load, has, count, play, say, stop, start, finish, recording, save, remove, blob, safe, ext, vid };
+  return { idle, load, has, count, play, say, stop, start, finish, recording, save, remove, blob, safe, ext, vid };
 })();

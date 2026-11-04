@@ -452,7 +452,7 @@ function gamesHTML() {
 function startGame(id) { Kid.tap('play'); const st = $('#gameStage'); if (!st) return; if (id === 'colourtap') colourTap(st); else if (id === 'countstars') countStars(st); else soundMatch(st); }
 function gameWin(el, again) {
   const fb = $('#gFb'); Sfx.win(); FX.burst(el, 34); Kid.reward(el, 3); doelHappy(); if (Voice.has('G:yes')) setTimeout(() => Voice.play('G:yes'), 700);
-  setTimeout(() => $('#gameStage') && again($('#gameStage')), 1500);
+  setTimeout(async () => { await Speech.idle(9000); await Voice.idle(); setTimeout(() => $('#gameStage') && again($('#gameStage')), 450); }, 1200);
   return fb;
 }
 function gameMiss(el, msg) { const fb = $('#gFb'); Sfx.oops(); el.classList.remove('shake-no'); void el.offsetWidth; el.classList.add('shake-no'); fb.textContent = msg; fb.className = 'play-fb try'; }
@@ -464,14 +464,14 @@ function colourTap(st) {
    <div class="colour-grid">${opts.map(c => `<button class="colour-btn" style="background:${c[1]}" data-act="gColour" data-v="${c[0]}" aria-label="${c[0]}"></button>`).join('')}</div><div class="play-fb" id="gFb"></div><div class="kfoot">${doelSVG()}</div></div>`;
   Speech.seq([['Tap ' + t[0] + '!', 'en-US', 0.85], [t[2] + '!', 'bn-BD', 0.85]]);
 }
-ACT.gColour = el => { if (el.dataset.v === gameTarget) { const fb = gameWin(el, colourTap); fb.textContent = 'Yes! Well done 🎉'; fb.className = 'play-fb good'; Speech.seq([['Yes! Well done!', 'en-US', 0.85]]); } else gameMiss(el, 'Try again!'); };
+ACT.gColour = el => { if (el.dataset.v === gameTarget) { const fb = gameWin(el, colourTap); fb.textContent = 'Yes! Well done 🎉'; fb.className = 'play-fb good'; Speech.seq([['Yes! Well done!', 'en-US', 0.85], ['সাবাশ! খুব ভালো হয়েছে!', 'bn-BD', 0.88]]); } else gameMiss(el, 'Try again!'); };
 function countStars(st) {
   const n = Math.floor(Math.random() * 4) + 1; gameTarget = n; const opts = [...new Set([n, Math.max(1, n - 1), Math.min(9, n + 1), n + 2])].slice(0, 3).sort((a, b) => a - b);
   st.innerHTML = `<div class="play-area"><div class="play-prompt">How many? <span class="bn">· কয়টি?</span></div><div class="play-sub">Count them together, out loud</div>
    <div class="stars">${'⭐'.repeat(n)}</div><div class="num-grid">${opts.map(o => `<button class="num-btn" data-act="gCount" data-v="${o}">${o}</button>`).join('')}</div><div class="play-fb" id="gFb"></div><div class="kfoot">${doelSVG()}</div></div>`;
-  Speech.seq([['How many stars?', 'en-US', 0.85]]);
+  Speech.seq([['How many stars?', 'en-US', 0.85], ['কয়টি তারা?', 'bn-BD', 0.88]]);
 }
-ACT.gCount = el => { if (+el.dataset.v === gameTarget) { const fb = gameWin(el, countStars); fb.textContent = 'That is right! 🎉'; fb.className = 'play-fb good'; Speech.seq([[gameTarget + '! Well counted!', 'en-US', 0.85]]); } else gameMiss(el, 'Count again together'); };
+ACT.gCount = el => { if (+el.dataset.v === gameTarget) { const fb = gameWin(el, countStars); fb.textContent = 'That is right! 🎉'; fb.className = 'play-fb good'; Speech.seq([[gameTarget + '! Well counted!', 'en-US', 0.85], [bnNum(gameTarget) + '! ঠিক গুনেছ!', 'bn-BD', 0.88]]); } else gameMiss(el, 'Count again together'); };
 const GA = [['Cat', '🐱', 'বিড়াল'], ['Dog', '🐶', 'কুকুর'], ['Cow', '🐮', 'গরু'], ['Duck', '🦆', 'হাঁস'], ['Sheep', '🐑', 'ভেড়া'], ['Frog', '🐸', 'ব্যাঙ']];
 function soundMatch(st) {
   const pick = [...GA].sort(() => Math.random() - .5).slice(0, 3), t = pick[Math.floor(Math.random() * 3)]; gameTarget = t[0]; const opts = [...pick].sort(() => Math.random() - .5);
@@ -479,4 +479,4 @@ function soundMatch(st) {
    <div class="num-grid">${opts.map(a => `<button class="num-btn emoji" data-act="gAnimal" data-v="${a[0]}" aria-label="${a[0]}">${a[1]}</button>`).join('')}</div><div class="play-fb" id="gFb"></div><div class="kfoot">${doelSVG()}</div></div>`;
   Speech.seq([['Where is the ' + t[0] + '?', 'en-US', 0.85], [t[2] + ' কোথায়?', 'bn-BD', 0.85]]);
 }
-ACT.gAnimal = el => { if (el.dataset.v === gameTarget) { const fb = gameWin(el, soundMatch); fb.textContent = 'Yes! You found it 🎉'; fb.className = 'play-fb good'; Speech.seq([['Yes! The ' + gameTarget + '!', 'en-US', 0.85]]); } else gameMiss(el, 'Listen again'); };
+ACT.gAnimal = el => { if (el.dataset.v === gameTarget) { const fb = gameWin(el, soundMatch); fb.textContent = 'Yes! You found it 🎉'; fb.className = 'play-fb good'; Speech.seq([['Yes! The ' + gameTarget + '!', 'en-US', 0.85], [((GA.find(a => a[0] === gameTarget) || [])[2] || '') + '! পেয়েছ!', 'bn-BD', 0.88]]); } else gameMiss(el, 'Listen again'); };
