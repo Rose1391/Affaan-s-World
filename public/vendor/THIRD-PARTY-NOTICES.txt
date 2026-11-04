@@ -5,3 +5,5 @@ data/world-110m.json — world-atlas 2.0.2 (Natural Earth, public domain), ISC L
 vendor/d3-geo.min.js, vendor/d3-array.min.js — d3-geo 3.1.1 / d3-array 3.2.4, ISC License, (c) Mike Bostock. https://d3js.org
 vendor/topojson-client.min.js — topojson-client 3.1.0, ISC License, (c) Mike Bostock. https://github.com/topojson/topojson-client
 Country data compiled for this app; Bangla names, capitals and currencies written for this app.
+data/bd.json — Bangladesh districts and divisions built from bangladesh-geojson 1.0.0 (MIT, data ODbL); boundaries © geoBoundaries (geoboundaries.org), CC BY 4.0, underlying data: Bangladesh Bureau of Statistics (BBS) / OCHA ROAP. Upazilas merged into 64 districts and 8 divisions for this app.
+National anthem text: "Amar Shonar Bangla", Rabindranath Tagore (1905), public domain.

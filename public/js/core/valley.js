@@ -34,9 +34,11 @@ const Valley = (() => {
     const fallW = y => wfW * (.35 + .65 * clamp((y - wfTop) / (wfBot - wfTop)));
     const fallPath = () => { x.beginPath(); for (let y = wfTop; y <= wfBot; y += 2 * dpr) x.lineTo(sx(fx) - fallW(y) / 2 + Math.sin(y * .09) * dpr * 1.2, y); for (let y = wfBot; y >= wfTop; y -= 2 * dpr) x.lineTo(sx(fx) + fallW(y) / 2 + Math.sin(y * .07 + 2) * dpr * 1.2, y); x.closePath(); };
     g = x.createLinearGradient(0, wfTop, 0, wfBot); g.addColorStop(0, rgba(mix(p.river, [255, 255, 255], .35), .75)); g.addColorStop(1, rgba(mix(p.river, [255, 255, 255], .6), .9));
+    if (!opt.split) {
     fallPath(); x.fillStyle = g; x.fill();
     x.fillStyle = rgba(mix(p.mid, [0, 0, 0], .45)); x.beginPath(); x.ellipse(sx(fx) - fallW(wfLedge) * .9, wfLedge, fallW(wfLedge) * .7, H * .006, -.2, 0, 6.29); x.fill();
     x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(sx(fx), wfLedge, fallW(wfLedge) * .75, H * .004, 0, 0, 6.29); x.fill();
+    }
     // 3) the village line on the other side
     const vStart = flip > 0 ? 0 : .55, vEnd = flip > 0 ? .45 : 1, hu = H * .016;
     for (let k = 0; k < 40; k++) { const u = vStart + (vEnd - vStart) * (k / 40) + (R() - .5) * .01, px = u * W, base = hy + 1;
@@ -64,26 +66,27 @@ const Valley = (() => {
         x.beginPath(); x.moveTo(l, y0); x.lineTo(r, y0); x.lineTo(r1, y1); x.lineTo(l1, y1); x.closePath(); x.fill(); } }
     // 5) the river: from the waterfall pool, wide and winding toward us
     const y0 = wfBot, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v) : fx + (.4 - fx) * v - .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v)), rw = v => W * (.03 + .34 * Math.pow(v, 1.35)), ry = v => y0 + (H - y0) * v;
-    x.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; x.lineTo(rv(v) - rw(v), ry(v)); } for (let i = 80; i >= 0; i--) { const v = i / 80; x.lineTo(rv(v) + rw(v), ry(v)); } x.closePath();
-    g = x.createLinearGradient(0, y0, 0, H); g.addColorStop(0, rgba(mix(p.river, p.haze, .45))); g.addColorStop(.4, rgba(mix(p.river, [30, 70, 100], .3))); g.addColorStop(1, rgba(mix(p.river, [10, 35, 55], .6)));
-    x.fillStyle = g; x.fill();
+    const rx = opt.split ? (c.riverLayer = canvas(W, H)).getContext('2d') : x;
+    rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) - rw(v), ry(v)); } for (let i = 80; i >= 0; i--) { const v = i / 80; rx.lineTo(rv(v) + rw(v), ry(v)); } rx.closePath();
+    g = rx.createLinearGradient(0, y0, 0, H); g.addColorStop(0, rgba(mix(p.river, p.haze, .45))); g.addColorStop(.4, rgba(mix(p.river, [30, 70, 100], .3))); g.addColorStop(1, rgba(mix(p.river, [10, 35, 55], .6)));
+    rx.fillStyle = g; rx.fill();
     // banks: soft dark edge with a sandy lip
-    for (const side of [-1, 1]) { x.strokeStyle = rgba(mix(p.near, [0, 0, 0], .4), .75); x.lineWidth = 2.4 * dpr; x.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; x.lineTo(rv(v) + side * rw(v), ry(v)); } x.stroke();
-      x.strokeStyle = rgba(mix(hex('#D8C08A'), p.haze, .3), .35); x.lineWidth = 1.4 * dpr; x.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; x.lineTo(rv(v) + side * (rw(v) + 3 * dpr * (1 + v)), ry(v)); } x.stroke(); }
+    for (const side of [-1, 1]) { rx.strokeStyle = rgba(mix(p.near, [0, 0, 0], .4), .75); rx.lineWidth = 2.4 * dpr; rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * rw(v), ry(v)); } rx.stroke();
+      rx.strokeStyle = rgba(mix(hex('#D8C08A'), p.haze, .3), .35); rx.lineWidth = 1.4 * dpr; rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * (rw(v) + 3 * dpr * (1 + v)), ry(v)); } rx.stroke(); }
     // the pool at the foot of the waterfall
-    x.fillStyle = rgba(mix(p.river, p.haze, .35)); x.beginPath(); x.ellipse(sx(fx), y0 + H * .004, W * .05, H * .008, 0, 0, 6.29); x.fill();
+    rx.fillStyle = rgba(mix(p.river, p.haze, .35)); rx.beginPath(); rx.ellipse(sx(fx), y0 + H * .004, W * .05, H * .008, 0, 0, 6.29); rx.fill();
     // 6) meadow grass, reeds along the banks, framing shrubs
     for (let i = 0; i < 2600; i++) { const v = .5 + Math.pow(R(), .7) * .5, px = R() * W, py = hy + (H - hy) * v, len = (3 + R() * 9) * dpr * (.4 + v), lean = (R() - .5) * 4 * dpr;
       const vv = clamp((py - y0) / (H - y0)); if (Math.abs(px - rv(vv)) < rw(vv) + 2 * dpr) continue;
       x.strokeStyle = rgba(mix(p.grass, R() < .5 ? [0, 0, 0] : p.haze, R() * .3), .7); x.lineWidth = Math.max(.7, .9 * dpr * v);
       x.beginPath(); x.moveTo(px, py); x.quadraticCurveTo(px + lean * .3, py - len * .6, px + lean, py - len); x.stroke(); }
     for (let i = 0; i < 160; i++) { const v = .15 + R() * .85, side = R() < .5 ? -1 : 1, px = rv(v) + side * (rw(v) + (1 + R() * 5) * dpr), py = ry(v), len = (6 + R() * 12) * dpr * (.3 + v);
-      x.strokeStyle = rgba(mix(hex('#4F7A3A'), [0, 0, 0], R() * .3), .85); x.lineWidth = Math.max(.7, dpr * (.5 + v * .6)); x.beginPath(); x.moveTo(px, py); x.lineTo(px + (R() - .5) * 4 * dpr, py - len); x.stroke(); }
+      rx.strokeStyle = rgba(mix(hex('#4F7A3A'), [0, 0, 0], R() * .3), .85); rx.lineWidth = Math.max(.7, dpr * (.5 + v * .6)); rx.beginPath(); rx.moveTo(px, py); rx.lineTo(px + (R() - .5) * 4 * dpr, py - len); rx.stroke(); }
     for (const side of [0, 1]) for (let i = 0; i < 24; i++) { const px = side ? W - R() * W * .2 : R() * W * .2, py = H - R() * (H - hy) * .2, r = (8 + R() * 18) * dpr;
       x.fillStyle = rgba(mix(p.near, [0, 0, 0], .2 + R() * .3)); x.beginPath(); x.arc(px, py, r, 0, 6.29); x.fill(); }
     // mist on the horizon
     g = x.createLinearGradient(0, hy - H * .03, 0, hy + H * .05); g.addColorStop(0, rgba(p.haze, 0)); g.addColorStop(.45, rgba(p.haze, .3)); g.addColorStop(1, rgba(p.haze, 0)); x.fillStyle = g; x.fillRect(0, hy - H * .03, W, H * .08);
-    c.river = { rv, rw, ry }; c.fall = { x: sx(fx), top: wfTop, bot: wfBot, w: wfW, fw: fallW };
+    c.river = { rv, rw, ry }; c.fall = { x: sx(fx), top: wfTop, bot: wfBot, w: wfW, fw: fallW, river: p.river };
     return c;
   }
 
@@ -98,6 +101,13 @@ const Valley = (() => {
     ctx.fillStyle = m; ctx.beginPath(); ctx.ellipse(f.x, f.bot, f.w * 3.4, f.w * 1.6, 0, 0, 6.29); ctx.fill(); ctx.restore();
   }
 
+  // the waterfall ribbon, revealed from the lip down (k = 0..1), for the opening
+  function fallRibbon(ctx, f, k, dpr) {
+    if (k <= 0) return; const yEnd = f.top + (f.bot - f.top) * Math.min(1, k);
+    const g = ctx.createLinearGradient(0, f.top, 0, f.bot); g.addColorStop(0, rgba(mix(f.river, [255, 255, 255], .35), .8)); g.addColorStop(1, rgba(mix(f.river, [255, 255, 255], .6), .92));
+    ctx.fillStyle = g; ctx.beginPath(); for (let y = f.top; y <= yEnd; y += 2 * dpr) ctx.lineTo(f.x - f.fw(y) / 2 + Math.sin(y * .09) * dpr * 1.2, y); for (let y = yEnd; y >= f.top; y -= 2 * dpr) ctx.lineTo(f.x + f.fw(y) / 2 + Math.sin(y * .07 + 2) * dpr * 1.2, y); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.ellipse(f.x, yEnd, f.fw(yEnd) * .7, 2 * dpr, 0, 0, 6.29); ctx.fill();
+  }
   // water lilies drifting downstream (v = position along the river, s = across)
   function lilies(n, seed = 3) { const R = rng(seed); return Array.from({ length: n }, () => ({ v: .1 + R() * .85, s: (R() - .5) * 1.2, sp: .006 + R() * .006, fl: R() < .55, hue: R() < .6 ? '#F4A7C3' : '#FFF4F0', rot: R() * 6.28, sz: .8 + R() * .5 })); }
   function drawLilies(ctx, L, rv, t, dt, dpr, dark) {
@@ -167,5 +177,5 @@ const Valley = (() => {
   }
   function moveHerd(herdA, t, dt, W) { herdA.forEach(a => { const cyc = (t + a.ph * 3) % 26; a.walking = cyc > 20 && cyc < 24; if (a.walking) a.x += a.face * W * .004 * dt; if (Math.abs(a.x - a.home) > W * .05) a.face = a.x > a.home ? -1 : 1; }); }
 
-  return { paint, waterfall, lilies, drawLilies, animal, herd, moveHerd };
+  return { paint, fallRibbon, waterfall, lilies, drawLilies, animal, herd, moveHerd };
 })();

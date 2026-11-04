@@ -29,7 +29,7 @@ async function route() {
   const view = Views[name] || Views.home;
   const prevSec = curRoute.split('/')[0];
   if (prevSec !== name) { window.scrollTo(0, 0); if (prevSec && name !== 'kid' && prevSec !== 'kid') Motion.wipe(); }
-  clearInterval(window._homeTimer); if (window.GlobeView && !location.hash.includes('kid/explore')) GlobeView.stop(); if (window._homeScene) { window._homeScene.stop(); window._homeScene = null; }
+  clearInterval(window._homeTimer); if (window.GlobeView && !location.hash.includes('kid/explore')) GlobeView.stop(); if (window.BdMap && !location.hash.includes('kid/bangladesh')) BdMap.stop(); if (window._homeScene) { window._homeScene.stop(); window._homeScene = null; }
   curRoute = h; Speech.stop();
   $$('#nav [data-to]').forEach(b => b.classList.toggle('on', b.dataset.to === name || (name === 'settings' && false)));
   const root = $('#view');
@@ -428,7 +428,7 @@ Views.settings = async () => {
     <section class="panel"><h3>Appearance · <span class="bn">চেহারা</span></h3>
       ${F.row(F.select('theme', 'Theme', 'থিম', [['garden', 'Garden · day'], ['emerald', 'Night garden'], ['auto', 'Follow phone setting']], await DB.meta.get('theme', 'garden')).replace('<select', '<select data-change="setTheme"'),
         F.select('textsize', 'Text size', 'লেখার আকার', [['1', 'Normal'], ['1.12', 'Large'], ['1.25', 'Extra large']], await DB.meta.get('textsize', '1')).replace('<select', '<select data-change="setTextSize"'))}
-      ${F.select('introMode', 'Opening animation', 'শুরুর অ্যানিমেশন', [['tree', 'The Golden Tree (7 s)'], ['film', 'Photo film (15 s, when the frames are added)'], ['off', 'Off']], await introMode()).replace('<select', '<select data-change="setIntroMode"')}
+      ${F.select('introMode', 'Opening animation', 'শুরুর অ্যানিমেশন', [['tree', 'The valley wakes (20 s)'], ['film', 'Photo film (15 s, when the frames are added)'], ['off', 'Off']], await introMode()).replace('<select', '<select data-change="setIntroMode"')}
       <div class="btnrow"><button class="btn" data-act="watchOpening">▶ Play the opening · <span class="bn">আবার দেখুন</span></button><button class="btn" data-act="watchFilm">▶ Watch the film · <span class="bn">ছবিটি দেখুন</span></button></div>
     </section>
 

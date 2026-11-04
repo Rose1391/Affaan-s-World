@@ -192,11 +192,13 @@ Views.kid = async (p) => {
   if (sub === 'music') return kidShell(musicHTML(), { title: 'Music<br><span class="bn">গান-বাজনা</span>', color: '#B0651A' });
   if (sub === 'art') return kidShell(artHTML(), { title: 'Paint<br><span class="bn">আঁকি</span>', color: '#B03A6E' });
   if (sub === 'explore') return kidShell(exploreHTML(), { title: 'World Explorer<br><span class="bn">বিশ্ব ভ্রমণ</span>', color: '#1F5E9A' });
+  if (sub === 'bangladesh') return kidShell(bangladeshHTML(), { title: 'Our Bangladesh<br><span class="bn">আমাদের বাংলাদেশ</span>', color: '#006A4E' });
   return kidShell(await islandHTML(), { back: false });
 };
 Views.kid.after = (p) => {
   Kid.ensureTimer();
   if (p[0] === 'explore' && EX.tab === 'globe') GlobeView.mount(); else GlobeView.stop();
+  if (p[0] === 'bangladesh' && BDX.tab === 'map') BdMap.mount(); else BdMap.stop();
   if (p[0] === 'game') startGame(p[1]);
   if (p[0] === 'bubbles') startBubbles();
   if (p[0] === 'sorter') bindSorter();
@@ -360,8 +362,11 @@ function peopleHTML() {
 }
 // parent tab: add a portrait per hero
 async function heroPhotosHTML() {
-  await loadHeroPics();
-  return `<p class="muted sm" style="margin:4px 2px 12px">Add a portrait for each personality from your phone — it appears in his Heroes cards and syncs to the other parent. Choose clear, respectful pictures. No portrait is shown for the Prophet (PBUH) or the Companions (RA).</p>
+  await loadHeroPics(); await loadBdPics();
+  const bdSec = `<section class="panel hpanel" style="--mc:#006A4E"><h3>🇧🇩 Our Bangladesh — real photos<span class="bn">আমাদের বাংলাদেশ — আসল ছবি</span></h3>
+    <p class="muted sm">Real photos help a toddler connect the word to the real thing. Best of all: your own — a jackfruit at home, a Doel in the garden, the family at the Shaheed Minar. The drawing stays as a small badge.</p>
+    <div class="hprow">${BD_SYMBOLS.map(s => `<button class="hpitem" data-act="bdPic" data-k="${s.k}">${bdSymArt(s, 'sm')}<b>${esc(s.v)}</b><small class="muted">${BD_PICS[s.k] ? '✓ Change photo' : '📷 Add photo'}</small></button>`).join('')}</div></section>`;
+  return bdSec + `<p class="muted sm" style="margin:4px 2px 12px">Add a portrait for each personality from your phone — it appears in his Heroes cards and syncs to the other parent. Choose clear, respectful pictures. No portrait is shown for the Prophet (PBUH) or the Companions (RA).</p>
   ${PERSONALITIES.map((f, n) => `<section class="panel hpanel" style="--mc:${f.c}"><h3>${n + 1}. ${esc(f.en)}<span class="bn">${esc(f.bn)}</span></h3><div class="hprow">${f.people.map(p => HERO_NO_PHOTO.has(p.n)
     ? `<div class="hpitem">${medal(p, f.c)}<b>${esc(p.n)}</b><small class="muted">Symbol only</small></div>`
     : `<button class="hpitem" data-act="heroPic" data-n="${esc(p.n)}">${heroTile(p, f.c)}<b>${esc(p.n)}</b><small class="muted">${HEROPICS[p.n] ? '✓ Change photo' : '📷 Add photo'}</small></button>`).join('')}</div></section>`).join('')}`;
@@ -371,6 +376,12 @@ ACT.heroPic = async el => {
   const r = (await DB.list('heropic')).find(x => x.name === name);
   Sheet.open({ title: esc(name) + ' · <span class="bn">ছবি</span>', body: `${F.photos(r && r.photoId ? [r.photoId] : [], 'Portrait', 'প্রতিকৃতি')}<p class="muted sm">A head-and-shoulders picture works best; it is shown in a small round tile.</p>`,
     save: async (fd, f) => { const ids = await formPhotos(f); await DB.put('heropic', { name, photoId: ids[ids.length - 1] || '' }, r && r.id); await loadHeroPics(); },
+    del: r ? () => DB.del(r.id) : null });
+};
+ACT.bdPic = async el => {
+  const k = el.dataset.k, s = BD_SYMBOLS.find(x => x.k === k), r = (await DB.list('bdphoto')).find(x => x.k === k);
+  Sheet.open({ title: esc(s.v) + ' · <span class="bn">' + esc(s.vBn) + '</span>', body: `${F.photos(r && r.photoId ? [r.photoId] : [], 'A real photo', 'আসল ছবি')}<p class="muted sm">A clear photo of the real thing works best — ideally one you took together.</p>`,
+    save: async (fd, f) => { const ids = await formPhotos(f); await DB.put('bdphoto', { k, photoId: ids[ids.length - 1] || '' }, r && r.id); await loadBdPics(); },
     del: r ? () => DB.del(r.id) : null });
 };
 ACT.kPeople = el => { Sfx.tap(); kidState.people = el.dataset.v || null; route(); requestAnimationFrame(() => (document.querySelector('.kid .kpad') || document.body).scrollIntoView({ block: 'start' })); };
