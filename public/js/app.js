@@ -449,7 +449,8 @@ Views.settings = async () => {
           <li><b>Android:</b> Settings → System → Languages → Text-to-speech output → Preferred engine: <i>Speech Services by Google</i> → ⚙ → Install voice data → <i>বাংলা (বাংলাদেশ)</i>. Then close and reopen the app.</li>
           <li><b>Laptop (Windows or Mac):</b> open the app in <i>Microsoft Edge</i> and install it from there — Edge has natural Bangladeshi voices (Nabanita, Pradeep) when online.</li>
           <li><b>iPhone / iPad:</b> Settings → Accessibility → Spoken Content → Voices — add Bangla if it is listed. If not, record your own voice in Play → Voices: it replaces the robot voice everywhere and is the most natural of all.</li></ul></div>` : ''}`; })()}
-      <div class="btnrow"><button class="btn" data-act="testVoice" data-lang="en">Test English</button><button class="btn" data-act="testVoice" data-lang="bn">বাংলা পরীক্ষা</button></div>
+      <p class="muted sm">Voices found: ${vi.count}${vi.plain ? ' · simple mode' : ''}${vi.last ? ' · last: ' + esc(vi.last) : ''}</p>
+      <div class="btnrow"><button class="btn" data-act="testVoice" data-lang="en">Test English</button><button class="btn" data-act="testVoice" data-lang="bn">বাংলা পরীক্ষা</button><button class="btn ghost" data-act="resetVoice">Reset voice</button></div>
     </section>
 
     <section class="panel"><h3>About</h3>
@@ -497,6 +498,7 @@ ACT.setLockAfter = async el => { await DB.meta.set('lockAfter', Number(el.value)
 ACT.changePin = () => Lock.change();
 ACT.lockNow = () => Lock.lockNow();
 ACT.toggleSound = () => { Speech.setEnabled(!Speech.isEnabled()); route(); };
+ACT.resetVoice = () => { Speech.resetPlain(); Speech.setVoice('en', ''); Speech.setVoice('bn', ''); toast('Voice settings reset'); route(); };
 ACT.pickVoice = el => { Speech.setVoice(el.dataset.base, el.value); el.dataset.base === 'bn' ? Speech.seq([['আসসালামু আলাইকুম, আফফান! চলো, একসাথে খেলি।', 'bn-BD', .9]]) : Speech.seq([['Hello Affaan! Let\'s play together.', 'en-US', .9]]); };
 ACT.testVoice = el => el.dataset.lang === 'bn' ? Speech.seq([['আসসালামু আলাইকুম, আফফান! চলো, একসাথে খেলি। আজ আমরা অক্ষর, সংখ্যা আর রং শিখব।', 'bn-BD', 0.9]]) : Speech.seq([['Hello Affaan! Let us play together.', 'en-US', 0.85]]);
 ACT.persist = async () => { const ok = await navigator.storage.persist(); toast(ok ? 'Storage is now persistent' : 'Browser declined — install the app to home screen and try again'); route(); };

@@ -46,7 +46,7 @@ const Speech = (function () {
   function hasBangla() { return !!pick('bn-BD'); }
   function unlock() {
     if (!ok || unlocked) return; unlocked = true;
-    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) { }
+    try { load(); const u = new SpeechSynthesisUtterance(' '); u.volume = 0; u.lang = 'en-US'; speechSynthesis.speak(u); } catch (e) { }
   }
   // prepare text for listening
   function clean(text, bn) {
@@ -65,38 +65,63 @@ const Speech = (function () {
       if (p) out.push(p); }
     return out;
   }
-  function utter(text, lang, rate, voice) {
+  // phones differ: some refuse an utterance with a voice object or a voice's own lang code. "plain" mode (remembered)
+  // speaks with just the language, which every mobile browser accepts.
+  let plain = false; try { plain = localStorage.getItem('affaan_tts_plain') === '1'; } catch (e) { }
+  const diag = { last: '', errors: 0, plain: () => plain };
+  const tag = l => (l || '').replace('_', '-');
+  function utter(text, lang, rate, voice, simple) {
     return new Promise(res => {
-      const u = new SpeechSynthesisUtterance(text), bn = lang.startsWith('bn');
-      u.voice = voice; u.lang = voice ? voice.lang : lang;
-      u.rate = bn ? Math.min(1, Math.max(.82, (rate || .9) + .06)) : Math.min(1, Math.max(.75, rate || .9));
-      u.pitch = bn ? 1 : 1.04; u.volume = 1;
+      let u; const bn = lang.startsWith('bn');
+      try {
+        u = new SpeechSynthesisUtterance(text);
+        u.lang = tag(lang);                                       // always the requested language, e.g. en-US / bn-BD
+        if (voice && !simple && !plain) u.voice = voice;          // only ever assign a real voice object
+        u.rate = bn ? Math.min(1, Math.max(.82, (rate || .9) + .06)) : Math.min(1, Math.max(.75, rate || .9));
+        u.pitch = bn ? 1 : 1.04; u.volume = 1;
+      } catch (e) { diag.last = 'build: ' + e.message; res('fail'); return; }
       let done = false, started = false; const t0 = performance.now();
-      const fin = () => { if (done) return; done = true; clearInterval(watch); clearTimeout(cap); res(); };
-      u.onstart = () => { started = true; }; u.onend = fin; u.onerror = fin;
-      // a "still speaking?" watch for browsers that lose the end event, and a generous cap so nothing ever hangs
-      const watch = setInterval(() => { if (speechSynthesis.speaking || speechSynthesis.pending) { started = true; return; } if (started || performance.now() - t0 > 2500) fin(); }, 250);
-      const cap = setTimeout(fin, 4000 + text.length * (bn ? 260 : 180));
-      speechSynthesis.speak(u);
-      if (speechSynthesis.paused) speechSynthesis.resume();
+      const fin = r => { if (done) return; done = true; clearInterval(watch); clearTimeout(cap); res(r || (started ? 'ok' : 'nostart')); };
+      u.onstart = () => { started = true; };
+      u.onend = () => fin('ok');
+      u.onerror = e => { const er = (e && e.error) || 'error'; diag.last = er; diag.errors++; if (er === 'not-allowed') unlocked = false; fin(er === 'interrupted' || er === 'canceled' ? 'ok' : 'fail'); };
+      // a "still speaking?" watch for browsers that lose the end event; a generous cap so nothing ever hangs
+      const watch = setInterval(() => { if (speechSynthesis.speaking || speechSynthesis.pending) { if (speechSynthesis.speaking) started = true; return; } if (started || performance.now() - t0 > 4000) fin(); }, 250);
+      const cap = setTimeout(() => fin(), 6000 + text.length * (bn ? 260 : 180));
+      try { speechSynthesis.speak(u); if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) { diag.last = 'speak: ' + e.message; fin('fail'); }
     });
   }
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // voices load a moment after the app opens: wait for them briefly before deciding anything
+  async function ready() { for (let i = 0; i < 12 && !voices.length; i++) { load(); if (voices.length) break; await sleep(150); } }
   async function speakOne(text, lang, rate, my) {
-    const bn = lang.startsWith('bn'), voice = pick(bn ? 'bn-BD' : lang);
-    if (bn && !voice) return;                                   // never let an English voice read Bangla
-    for (const c of chunks(clean(text, bn))) { if (my !== token) return; await utter(c, lang, rate, voice); if (my !== token) return; await sleep(90); }
+    const bn = lang.startsWith('bn');
+    await ready();
+    const voice = pick(bn ? 'bn-BD' : lang);
+    // never let an English voice read Bangla: skip only when the phone's voice list is known and has no Bangla at all
+    if (bn && !voice && voices.length && !voices.some(v => /^bn/i.test(tag(v.lang)))) { diag.last = 'no Bangla voice on this device'; return; }
+    for (const c of chunks(clean(text, bn))) {
+      if (my !== token) return;
+      let r = await utter(c, bn ? 'bn-BD' : lang, rate, voice);
+      if (r !== 'ok' && my === token) {                           // retry once the simplest way, and remember it worked
+        speechSynthesis.cancel(); await sleep(120);
+        const r2 = await utter(c, bn ? 'bn-BD' : lang, rate, voice, true);
+        if (r2 === 'ok' && !plain) { plain = true; try { localStorage.setItem('affaan_tts_plain', '1'); } catch (e) { } }
+      }
+      if (my !== token) return; await sleep(90);
+    }
   }
   let token = 0;
   async function seq(parts) {
     if (!ok || !enabled) return;
     unlock();
     const my = ++token; busy = true;
-    speechSynthesis.cancel();
-    await sleep(80);                                            // let cancel settle (iOS / Chrome)
+    try { speechSynthesis.cancel(); } catch (e) { }
+    await sleep(120);                                           // let cancel settle (iOS / Chrome Android)
     try { for (let i = 0; i < parts.length; i++) { const p = parts[i]; if (my !== token) return; if (!p || !p[0]) continue;
       await speakOne(p[0], p[1] || 'en-US', p[2], my);
       if (i < parts.length - 1) await sleep(260); } }        // a natural breath between English and Bangla
+    catch (e) { diag.last = 'seq: ' + e.message; }
     finally { if (my === token) { busy = false; const w = waiters; waiters = []; w.forEach(f => f()); } }
   }
   // resolves when the voice has finished (or after `max` ms)
@@ -106,8 +131,9 @@ const Speech = (function () {
   function isEnabled() { return enabled; }
   function setVoice(base, uri) { try { if (uri) localStorage.setItem(prefKey(base), uri); else localStorage.removeItem(prefKey(base)); } catch (e) { } }
   function list(base) { return candidates(base === 'bn' ? 'bn-BD' : 'en-US').map(v => ({ uri: v.voiceURI || v.name, name: v.name, lang: v.lang })); }
-  function voiceInfo() { load(); return { ok, count: voices.length, en: (pick('en-US') || {}).name || null, bn: (pick('bn-BD') || {}).name || null, bnLang: (pick('bn-BD') || {}).lang || null, unlocked }; }
-  return { ok, seq, stop, idle, setEnabled, isEnabled, hasBangla, unlock, voiceInfo, list, setVoice, clean, chunks, isBusy: () => busy };
+  function resetPlain() { plain = false; try { localStorage.removeItem('affaan_tts_plain'); } catch (e) { } }
+  function voiceInfo() { load(); return { ok, plain, last: diag.last, errors: diag.errors, count: voices.length, en: (pick('en-US') || {}).name || null, bn: (pick('bn-BD') || {}).name || null, bnLang: (pick('bn-BD') || {}).lang || null, unlocked }; }
+  return { ok, seq, stop, idle, resetPlain, setEnabled, isEnabled, hasBangla, unlock, voiceInfo, list, setVoice, clean, chunks, isBusy: () => busy };
 })();
 // prime unlock on the very first touch anywhere (capture phase so nothing can swallow it)
-['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => Speech.unlock(), { once: true, capture: true }));
+['pointerdown', 'touchend', 'click', 'keydown'].forEach(ev => document.addEventListener(ev, () => Speech.unlock(), { capture: true }));
