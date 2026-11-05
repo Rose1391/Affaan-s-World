@@ -81,6 +81,7 @@ const HomeScene = (() => {
       const shg = ctx.createRadialGradient(X, Y, 0, X, Y, S * .6); shg.addColorStop(0, `rgba(8,18,6,${night ? .45 : .32 * (1 - rain * .5)})`); shg.addColorStop(1, 'rgba(8,18,6,0)');
       ctx.save(); ctx.translate(X, Y); ctx.scale(1, .12); ctx.translate(-X, -Y); ctx.fillStyle = shg; ctx.beginPath(); ctx.arc(X, Y, S * .6, 0, 6.29); ctx.fill(); ctx.restore();
       Scene.drawTree(ctx, TREE, X, Y, S, { t: 99, bark: 1, leafT: 99, dpr, rim: night ? hex('#9FB6D8') : p.sun, glow: night || rain > .5 ? null : p.sun, dark: night ? .55 : rain * .25, roots: true, wind: still ? null : wind, flutter: .12 + gust(t) * .25, time: t });
+      Valley.people(ctx, X, Y, S, still ? 0 : t, night, TREE.segs[0].w * S);
       const z = S * .04;
       perchedDef.forEach(d => { const h = clamp(-d.y / -TREE.box.minY), w8 = still ? [0, 0] : wind(d.x, d.y, h), look = (t + d.ph) % 5 > 4.2 ? -d.face : d.face;
         Scene.doel(ctx, X + (d.x + w8[0]) * S, Y + (d.y + w8[1]) * S, z, look, 0, 'perch', 0, t + d.ph, night ? 'rgba(160,190,230,.35)' : 'rgba(255,220,160,.45)'); });

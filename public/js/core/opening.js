@@ -103,7 +103,7 @@ const Opening = (() => {
       const L = lands[2], f = L.fall, rv = L.river;
       // the waterfall begins, falls, fills its pool
       const fk = sm(4, 6.2, t); Valley.fallRibbon(ctx, f, fk, dpr); if (fk >= 1) Valley.waterfall(ctx, f, t, dpr, .9 * (1 - rain * .3));
-      const pool = sm(5.8, 6.8, t); if (pool > 0) { ctx.fillStyle = rgba(mix(pY.river, pY.haze, .35), .9); ctx.beginPath(); ctx.ellipse(f.x, f.bot + H * .004, W * .05 * pool, H * .008 * pool, 0, 0, 6.29); ctx.fill(); }
+      const pool = sm(5.8, 6.8, t); if (pool > 0) { ctx.fillStyle = `rgba(255,255,255,${.5 * pool})`; ctx.beginPath(); ctx.ellipse(f.x, f.bot, f.fw(f.bot) * .85 * pool, H * .004, 0, 0, 6.29); ctx.fill(); }
       // the river carves its way toward us (revealed down the screen, with a bright leading edge)
       const rk = sm(6.5, 10, t); if (rk > 0) { const yEdge = rv.ry(rk); const k2 = dawn * (1 - day);
         ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, yEdge); ctx.clip();
@@ -125,6 +125,7 @@ const Opening = (() => {
       const shg = ctx.createRadialGradient(X, Y, 0, X, Y, S * .6); shg.addColorStop(0, `rgba(8,18,6,${.32 * dawn})`); shg.addColorStop(1, 'rgba(8,18,6,0)');
       ctx.save(); ctx.translate(X, Y); ctx.scale(1, .12); ctx.translate(-X, -Y); ctx.fillStyle = shg; ctx.beginPath(); ctx.arc(X, Y, S * .6, 0, 6.29); ctx.fill(); ctx.restore();
       Scene.drawTree(ctx, TREE, X, Y, S, { t, bark: sm(6, 10, t), leafT: t - 1.2, dpr, rim: hex('#F2D088'), glow: dawn > .3 && rain < .5 ? hex('#FFD8A0') : null, roots: t > 3, wind, flutter: .1 + gust(t) * .25 * windAmp(t), time: t, dark: (1 - dawn) * .3 + rain * .2 });
+      if (t > 17.2) { ctx.globalAlpha = sm(17.2, 18.4, t); Valley.people(ctx, X, Y, S, t, false, TREE.segs[0].w * S); ctx.globalAlpha = 1; }
       const z = S * .04; flights.forEach(fl => fl(ctx, t, z, 'rgba(255,214,150,.5)'));
       // the shower, slanting with the wind
       if (rain > 0) { const n = Math.round(170 * rain), slant = 4 + gust(t) * 6; ctx.strokeStyle = 'rgba(215,228,240,.4)'; ctx.lineWidth = dpr; ctx.beginPath();

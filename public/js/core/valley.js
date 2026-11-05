@@ -14,48 +14,64 @@ const Valley = (() => {
     // 1) far hills all along the horizon
     x.beginPath(); x.moveTo(0, hy + 2); for (let px = 0; px <= W; px += 3) x.lineTo(px, hy - H * (.03 + .035 * n1(px / W * 2.6 + .7))); x.lineTo(W, hy + 2); x.closePath();
     let g = x.createLinearGradient(0, hy - H * .07, 0, hy); g.addColorStop(0, haze(p.far, .25)); g.addColorStop(1, haze(p.far, .7)); x.fillStyle = g; x.fill();
-    // 2) a mountain range on one side: a pale back range and a nearer forested range, both with real ridges
+    // 2) a mountain range on one side: a pale back range and a nearer forested range, both tall with real ridges
     const ridge = (n, x) => 1 - Math.abs(2 * n(x) - 1);
-    const env = u => { const k = clamp((u - .44) / .56); return k > 0 ? Math.pow(Math.sin(k * Math.PI * .96), .8) * Math.min(1, k * 5) : 0; };
-    const mtB = u => hy - H * env(u) * (.06 + .09 * ridge(n2, u * 2.3 + 4) + .025 * n1(u * 11));
-    const mt = u => hy - H * env(u) * (.035 + .09 * ridge(n3, u * 3.4 + 1) + .02 * n1(u * 17 + 2));
+    const env = u => { const k = clamp((u - .42) / .58); return k > 0 ? Math.pow(Math.sin(k * Math.PI * .97), .75) * Math.min(1, k * 4) : 0; };
+    const mtB = u => hy - H * env(u) * (.12 + .15 * ridge(n2, u * 2.3 + 4) + .03 * n1(u * 11));
+    const mt = u => hy - H * env(u) * (.07 + .13 * ridge(n3, u * 3.4 + 1) + .025 * n1(u * 17 + 2));
     for (const [fn, k0, k1, tone] of [[mtB, .35, .62, .12], [mt, .1, .4, 0]]) {
-      x.beginPath(); x.moveTo(sx(.4), hy + 2); for (let u = .4; u <= 1.001; u += .003) x.lineTo(sx(u), fn(u)); x.lineTo(sx(1), hy + 2); x.closePath();
-      g = x.createLinearGradient(0, hy - H * .26, 0, hy); g.addColorStop(0, haze(mix(p.far, [125, 115, 105], .3), k0)); g.addColorStop(1, haze(mix(p.mid, p.far, tone ? .6 : 0), k1)); x.fillStyle = g; x.fill();
-      // sunlit and shaded faces following the ridgelines
+      x.beginPath(); x.moveTo(sx(.38), hy + 2); for (let u = .38; u <= 1.001; u += .003) x.lineTo(sx(u), fn(u)); x.lineTo(sx(1), hy + 2); x.closePath();
+      g = x.createLinearGradient(0, hy - H * .32, 0, hy); g.addColorStop(0, haze(mix(p.far, [125, 115, 105], .3), k0)); g.addColorStop(1, haze(mix(p.mid, p.far, tone ? .6 : 0), k1)); x.fillStyle = g; x.fill();
       x.save(); x.clip();
-      // soft light from the left, shadow toward the right of each range
-      { const lg = x.createLinearGradient(sx(.45), 0, sx(1), 0); lg.addColorStop(0, 'rgba(255,246,222,.08)'); lg.addColorStop(.55, 'rgba(0,0,0,0)'); lg.addColorStop(1, 'rgba(0,0,0,.12)'); x.fillStyle = lg; x.fillRect(0, hy - H * .4, W, H * .4); }
-      if (!tone) for (let i = 0; i < 340; i++) { const u = .42 + R() * .58, top = fn(u), y = top + (hy - top) * (.35 + R() * .65), r = (1.8 + R() * 3.2) * dpr;
+      { const lg = x.createLinearGradient(sx(.45), 0, sx(1), 0); lg.addColorStop(0, 'rgba(255,246,222,.08)'); lg.addColorStop(.55, 'rgba(0,0,0,0)'); lg.addColorStop(1, 'rgba(0,0,0,.12)'); x.fillStyle = lg; x.fillRect(0, hy - H * .45, W, H * .45); }
+      if (!tone) for (let i = 0; i < 420; i++) { const u = .4 + R() * .6, top = fn(u), y = top + (hy - top) * (.3 + R() * .7), r = (1.8 + R() * 3.2) * dpr;
         x.fillStyle = rgba(mix(mix(p.mid, p.haze, .25), [0, 0, 0], R() * .3)); x.beginPath(); x.arc(sx(u), y, r, 0, 6.29); x.fill(); }
       x.restore(); }
-    // the waterfall: narrow at the lip, widening, broken by a rock ledge, foaming at the pool
-    const wfTop = mt(fx) + H * .012, wfBot = hy + H * .006, wfW = W * .02, wfLedge = wfTop + (wfBot - wfTop) * .55;
+    // the waterfall: narrow at the lip, widening as it falls, broken by a rock ledge
+    const wfTop = mt(fx) + H * .015, wfBot = hy + H * .008, wfW = W * .022, wfLedge = wfTop + (wfBot - wfTop) * .55;
     const fallW = y => wfW * (.35 + .65 * clamp((y - wfTop) / (wfBot - wfTop)));
     const fallPath = () => { x.beginPath(); for (let y = wfTop; y <= wfBot; y += 2 * dpr) x.lineTo(sx(fx) - fallW(y) / 2 + Math.sin(y * .09) * dpr * 1.2, y); for (let y = wfBot; y >= wfTop; y -= 2 * dpr) x.lineTo(sx(fx) + fallW(y) / 2 + Math.sin(y * .07 + 2) * dpr * 1.2, y); x.closePath(); };
     g = x.createLinearGradient(0, wfTop, 0, wfBot); g.addColorStop(0, rgba(mix(p.river, [255, 255, 255], .35), .75)); g.addColorStop(1, rgba(mix(p.river, [255, 255, 255], .6), .9));
     if (!opt.split) {
-    fallPath(); x.fillStyle = g; x.fill();
-    x.fillStyle = rgba(mix(p.mid, [0, 0, 0], .45)); x.beginPath(); x.ellipse(sx(fx) - fallW(wfLedge) * .9, wfLedge, fallW(wfLedge) * .7, H * .006, -.2, 0, 6.29); x.fill();
-    x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(sx(fx), wfLedge, fallW(wfLedge) * .75, H * .004, 0, 0, 6.29); x.fill();
+      fallPath(); x.fillStyle = g; x.fill();
+      x.fillStyle = rgba(mix(p.mid, [0, 0, 0], .45)); x.beginPath(); x.ellipse(sx(fx) - fallW(wfLedge) * .9, wfLedge, fallW(wfLedge) * .7, H * .006, -.2, 0, 6.29); x.fill();
+      x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(sx(fx), wfLedge, fallW(wfLedge) * .75, H * .004, 0, 0, 6.29); x.fill();
     }
-    // 3) the village line on the other side
-    const vStart = flip > 0 ? 0 : .55, vEnd = flip > 0 ? .45 : 1, hu = H * .016;
-    for (let k = 0; k < 40; k++) { const u = vStart + (vEnd - vStart) * (k / 40) + (R() - .5) * .01, px = u * W, base = hy + 1;
-      if (R() < .35) { // coconut palm
-        const ph = hu * (2.6 + R() * 1.4), lean = (R() - .5) * hu; x.strokeStyle = haze(hex('#5B4A36'), .5); x.lineWidth = Math.max(1, hu * .14); x.beginPath(); x.moveTo(px, base); x.quadraticCurveTo(px + lean, base - ph * .5, px + lean * 1.5, base - ph); x.stroke();
-        x.strokeStyle = haze(hex('#3F6B34'), .45); x.lineWidth = Math.max(1, hu * .16); for (let f = 0; f < 6; f++) { const a = -Math.PI / 2 + (f / 5 - .5) * 2.8; x.beginPath(); x.moveTo(px + lean * 1.5, base - ph); x.quadraticCurveTo(px + lean * 1.5 + Math.cos(a) * hu * .9, base - ph + Math.sin(a) * hu * .4 - hu * .3, px + lean * 1.5 + Math.cos(a) * hu * 1.5, base - ph + Math.sin(a) * hu * .2 + hu * .5); x.stroke(); }
-      } else if (R() < .55) { // hut: mud wall + tin roof catching the light
-        const w = hu * (1.2 + R() * .8), h = hu * (.7 + R() * .3);
-        x.fillStyle = haze(hex('#9C7B55'), .45); x.fillRect(px - w / 2, base - h, w, h);
-        x.fillStyle = haze(mix(hex('#B8C6D0'), p.sun, .2), .3); x.beginPath(); x.moveTo(px - w * .62, base - h); x.lineTo(px, base - h - hu * .65); x.lineTo(px + w * .62, base - h); x.closePath(); x.fill();
-        x.fillStyle = haze(hex('#3A2A1A'), .5); x.fillRect(px - w * .12, base - h * .6, w * .24, h * .6);
-      } else { // trees and bamboo clumps
-        const r = hu * (.6 + R() * .7); x.fillStyle = haze(mix(p.mid, [0, 0, 0], R() * .2), .4); x.beginPath(); x.arc(px, base - r * .9, r, 0, 6.29); x.arc(px + r * .7, base - r * .6, r * .7, 0, 6.29); x.fill(); } }
-    // a small white mosque in the village
-    { const mx = (vStart + (vEnd - vStart) * .55) * W, base = hy + 1, w = hu * 2.4; x.fillStyle = haze(hex('#EDE9DF'), .25); x.fillRect(mx - w / 2, base - hu * 1.2, w, hu * 1.2);
-      x.beginPath(); x.arc(mx, base - hu * 1.2, w * .32, Math.PI, 0); x.fill(); x.fillRect(mx + w * .55, base - hu * 2.6, hu * .3, hu * 2.6);
-      x.beginPath(); x.arc(mx + w * .55 + hu * .15, base - hu * 2.6, hu * .22, Math.PI, 0); x.fill(); }
+    // 3) the village line: homesteads in clusters — each on its raised mound with do-chala houses (two-sloped tin or
+    //    thatch roofs), mango and jackfruit trees, banana plants, tall betel-nut and coconut palms; a small mosque
+    const vStart = flip > 0 ? 0 : .58, vEnd = flip > 0 ? .5 : 1, hu = H * .017, base = hy + 1;
+    const far = k => haze(k, .3);
+    const roundTree = (px, r, col) => { x.fillStyle = far(mix(col, [0, 0, 0], .08)); x.beginPath(); x.arc(px, base - r * 1.1, r, 0, 6.29); x.arc(px - r * .7, base - r * .75, r * .72, 0, 6.29); x.arc(px + r * .72, base - r * .8, r * .7, 0, 6.29); x.fill();
+      x.fillStyle = far(mix(col, [255, 255, 230], .12)); x.beginPath(); x.arc(px - r * .25, base - r * 1.35, r * .5, 0, 6.29); x.fill(); };
+    const palm = (px, ph, lean, coconut) => { x.strokeStyle = far(hex('#6B5A44')); x.lineWidth = Math.max(1, hu * (coconut ? .13 : .09)); x.beginPath(); x.moveTo(px, base); x.quadraticCurveTo(px + lean * .4, base - ph * .55, px + lean, base - ph); x.stroke();
+      const n = coconut ? 9 : 6, L = hu * (coconut ? 1.5 : 1.05), tx = px + lean, ty = base - ph;
+      for (let f = 0; f < n; f++) { const a = -Math.PI / 2 + (f / (n - 1) - .5) * 3.3, ex = tx + Math.cos(a) * L, ey = ty + Math.sin(a) * L * .35 + L * (.15 + .5 * Math.abs(Math.cos(a))), mx = (tx + ex) / 2, my = (ty + ey) / 2 - L * .18;
+        x.strokeStyle = far(hex('#4A6B34')); x.lineWidth = Math.max(.7, hu * .05); x.beginPath(); x.moveTo(tx, ty); x.quadraticCurveTo(mx, my, ex, ey); x.stroke();
+        x.fillStyle = far(hex(f % 2 ? '#3F7A36' : '#4C8A3C')); for (let q = 1; q <= 4; q++) { const k = q / 5, lx = (1 - k) * (1 - k) * tx + 2 * (1 - k) * k * mx + k * k * ex, ly = (1 - k) * (1 - k) * ty + 2 * (1 - k) * k * my + k * k * ey;
+          x.beginPath(); x.ellipse(lx, ly + hu * .08, hu * .26 * (1 - k * .4), hu * .06, a + .9, 0, 6.29); x.fill(); x.beginPath(); x.ellipse(lx, ly + hu * .08, hu * .26 * (1 - k * .4), hu * .06, a - .9 + Math.PI, 0, 6.29); x.fill(); } }
+      if (coconut) { x.fillStyle = far(hex('#6B4A22')); for (let q = 0; q < 3; q++) { x.beginPath(); x.arc(tx + (q - 1) * hu * .1, ty + hu * .12, hu * .08, 0, 6.29); x.fill(); } } };
+    const banana = px => { x.fillStyle = far(hex('#5E9A3E')); for (let f = 0; f < 5; f++) { const a = -Math.PI / 2 + (f / 4 - .5) * 2.2; x.beginPath(); x.ellipse(px + Math.cos(a) * hu * .45, base - hu * .9 + Math.sin(a) * hu * .35, hu * .5, hu * .14, a, 0, 6.29); x.fill(); } };
+    const house = (px, w, tin) => { const h = w * .55, roof = w * .42;
+      x.fillStyle = far(hex(tin ? '#A8895F' : '#9C7B55')); x.fillRect(px - w / 2, base - h, w, h);                                           // mud / bamboo wall
+      x.fillStyle = far(hex('#3A2A1A')); x.fillRect(px - w * .1, base - h * .7, w * .2, h * .7); x.fillRect(px + w * .22, base - h * .72, w * .12, h * .22);   // door, window
+      const rc = tin ? mix(hex('#B9C3CA'), p.sun, .25) : hex('#B79A5A');                                                                   // tin catches the light; thatch is straw
+      x.fillStyle = far(rc); x.beginPath(); x.moveTo(px - w * .62, base - h + 1); x.quadraticCurveTo(px - w * .3, base - h - roof * .55, px, base - h - roof); x.quadraticCurveTo(px + w * .3, base - h - roof * .55, px + w * .62, base - h + 1); x.closePath(); x.fill();
+      x.strokeStyle = far(mix(rc, [0, 0, 0], .25)); x.lineWidth = Math.max(.6, dpr * .6); x.beginPath(); x.moveTo(px, base - h - roof); x.lineTo(px, base - h - roof * .1); x.stroke(); };
+    // the strip of homestead land the village stands on
+    x.fillStyle = far(mix(p.near, p.mid, .4)); x.beginPath(); x.moveTo(sx(flip > 0 ? 0 : 1) , base + 2);
+    for (let u = vStart; u <= vEnd + .001; u += .01) x.lineTo(u * W, base - hu * (.25 + .2 * n1(u * 20))); x.lineTo(vEnd * W, base + 2); x.closePath(); x.fill();
+    // background tree line, then homestead clusters in front
+    for (let u = vStart; u < vEnd; u += .022) roundTree(u * W + (R() - .5) * hu, hu * (.5 + R() * .35), mix(p.mid, [20, 60, 20], .25));
+    const nCl = 5, mosqueAt = 2, cl = Array.from({ length: nCl }, (_, k) => ({ k, cx: (vStart + (vEnd - vStart) * ((k + .5) / nCl) + (R() - .5) * .03) * W, r: R(), r2: R(), r3: R(), r4: R() }));
+    cl.forEach(c => roundTree(c.cx - hu * 2.4, hu * (.85 + c.r * .3), hex('#3E7A34')));                 // mango / jackfruit behind each homestead
+    cl.forEach(c => { const cx = c.cx;
+      if (c.k === mosqueAt) { // a small white mosque with a dome and a minaret
+        const w = hu * 2.6; x.fillStyle = far(hex('#EFEBE1')); x.fillRect(cx - w / 2, base - hu * 1.3, w, hu * 1.3); x.beginPath(); x.arc(cx, base - hu * 1.3, w * .3, Math.PI, 0); x.fill();
+        x.fillRect(cx + w * .6, base - hu * 2.9, hu * .32, hu * 2.9); x.beginPath(); x.arc(cx + w * .6 + hu * .16, base - hu * 2.9, hu * .24, Math.PI, 0); x.fill();
+        x.fillStyle = far(hex('#3E7A50')); x.beginPath(); x.arc(cx, base - hu * 1.3 - w * .3, hu * .08, 0, 6.29); x.fill();
+      } else { house(cx, hu * (1.8 + c.r2 * .5), c.r3 < .6); if (c.r4 < .75) house(cx + hu * 2.0, hu * (1.4 + c.r * .3), c.r2 < .5); } });
+    cl.forEach(c => { const cx = c.cx; banana(cx - hu * 1.25); palm(cx + hu * 3.1, hu * (3.2 + c.r * 1.2), hu * (c.r2 - .5) * .8, c.r3 < .5); if (c.r4 < .6) palm(cx - hu * 3.2, hu * (2.6 + c.r2), hu * (c.r - .5) * .6, false);
+      if (c.k === 1) { x.strokeStyle = 'rgba(235,235,235,.35)'; x.lineWidth = hu * .25; x.lineCap = 'round'; x.beginPath(); x.moveTo(cx, base - hu * 1.6); x.bezierCurveTo(cx + hu * .3, base - hu * 2.4, cx - hu * .4, base - hu * 3, cx + hu * .6, base - hu * 3.8); x.stroke(); } });  // kitchen smoke
     // 4) the ground and paddy fields
     g = x.createLinearGradient(0, hy, 0, H); g.addColorStop(0, rgba(mix(p.near, p.haze, .5))); g.addColorStop(.3, rgba(mix(p.field, p.near, .3))); g.addColorStop(1, rgba(mix(p.near, [0, 0, 0], .25)));
     x.fillStyle = g; x.fillRect(0, hy, W, H - hy);
@@ -65,7 +81,7 @@ const Valley = (() => {
         const shade = (n3(row * 1.7 + col * 3.3) - .5) * .12; x.fillStyle = rgba(mix(mix(fieldC, p.near, .25 + v0 * .3), shade > 0 ? [255, 250, 210] : [0, 0, 0], Math.abs(shade)), .35 + v0 * .3);
         x.beginPath(); x.moveTo(l, y0); x.lineTo(r, y0); x.lineTo(r1, y1); x.lineTo(l1, y1); x.closePath(); x.fill(); } }
     // 5) the river: from the waterfall pool, wide and winding toward us
-    const y0 = wfBot, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v) : fx + (.4 - fx) * v - .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v)), rw = v => W * (.03 + .34 * Math.pow(v, 1.35)), ry = v => y0 + (H - y0) * v;
+    const y0 = wfBot - H * .004, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v) : fx + (.4 - fx) * v - .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v)), rw = v => W * (wfW / W * .5 + .35 * Math.pow(v, 1.3)) + (1 - clamp(v * 12)) * W * .004, ry = v => y0 + (H - y0) * v;
     const rx = opt.split ? (c.riverLayer = canvas(W, H)).getContext('2d') : x;
     rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) - rw(v), ry(v)); } for (let i = 80; i >= 0; i--) { const v = i / 80; rx.lineTo(rv(v) + rw(v), ry(v)); } rx.closePath();
     g = rx.createLinearGradient(0, y0, 0, H); g.addColorStop(0, rgba(mix(p.river, p.haze, .45))); g.addColorStop(.4, rgba(mix(p.river, [30, 70, 100], .3))); g.addColorStop(1, rgba(mix(p.river, [10, 35, 55], .6)));
@@ -73,8 +89,8 @@ const Valley = (() => {
     // banks: soft dark edge with a sandy lip
     for (const side of [-1, 1]) { rx.strokeStyle = rgba(mix(p.near, [0, 0, 0], .4), .75); rx.lineWidth = 2.4 * dpr; rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * rw(v), ry(v)); } rx.stroke();
       rx.strokeStyle = rgba(mix(hex('#D8C08A'), p.haze, .3), .35); rx.lineWidth = 1.4 * dpr; rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * (rw(v) + 3 * dpr * (1 + v)), ry(v)); } rx.stroke(); }
-    // the pool at the foot of the waterfall
-    rx.fillStyle = rgba(mix(p.river, p.haze, .35)); rx.beginPath(); rx.ellipse(sx(fx), y0 + H * .004, W * .05, H * .008, 0, 0, 6.29); rx.fill();
+    // white water where the fall meets the river (no round pool: the river grows straight out of the fall)
+    { const fw = fallW(wfBot); rx.fillStyle = 'rgba(255,255,255,.55)'; rx.beginPath(); rx.ellipse(sx(fx), wfBot, fw * .85, H * .004, 0, 0, 6.29); rx.fill(); }
     // 6) meadow grass, reeds along the banks, framing shrubs
     for (let i = 0; i < 2600; i++) { const v = .5 + Math.pow(R(), .7) * .5, px = R() * W, py = hy + (H - hy) * v, len = (3 + R() * 9) * dpr * (.4 + v), lean = (R() - .5) * 4 * dpr;
       const vv = clamp((py - y0) / (H - y0)); if (Math.abs(px - rv(vv)) < rw(vv) + 2 * dpr) continue;
@@ -97,8 +113,8 @@ const Valley = (() => {
     for (let i = 0; i < 14; i++) { const u = (i / 13 - .5) * .85, ph = ((t * (.75 + (i % 3) * .12) + i * .37) % 1), y = f.top + ph * len, y2 = Math.min(f.bot, y + len * .14);
       ctx.globalAlpha = a * (.4 + .5 * Math.sin(ph * Math.PI)); ctx.beginPath(); ctx.moveTo(f.x + u * f.fw(y), y); ctx.lineTo(f.x + u * f.fw(y2), y2); ctx.stroke(); }
     ctx.globalAlpha = a;
-    const m = ctx.createRadialGradient(f.x, f.bot, 0, f.x, f.bot, f.w * 3.4); // spray m.addColorStop(0, `rgba(255,255,255,${.55 + .1 * Math.sin(t * 2)})`); m.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = m; ctx.beginPath(); ctx.ellipse(f.x, f.bot, f.w * 3.4, f.w * 1.6, 0, 0, 6.29); ctx.fill(); ctx.restore();
+    const m = ctx.createRadialGradient(f.x, f.bot, 0, f.x, f.bot, f.w * 1.6); // spray m.addColorStop(0, `rgba(255,255,255,${.55 + .1 * Math.sin(t * 2)})`); m.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = m; ctx.beginPath(); ctx.ellipse(f.x, f.bot - f.w * .3, f.w * 1.3, f.w * 1.2, 0, 0, 6.29); ctx.fill(); ctx.restore();
   }
 
   // the waterfall ribbon, revealed from the lip down (k = 0..1), for the opening
@@ -121,53 +137,81 @@ const Valley = (() => {
         ctx.fillStyle = '#F7D24A'; ctx.beginPath(); ctx.arc(x, y - fr * .35, fr * .18, 0, 6.29); ctx.fill(); } }
   }
 
-  // grazing animals, drawn side-on (origin on the ground, facing right): a zebu cow with its hump and dewlap,
-  // and a Black Bengal goat. They graze (head down), look up, swish their tails and now and then take a few steps.
+  // grazing animals, side-on (origin on the ground, facing right, z = body length in px): a zebu cow and a Black Bengal goat.
+  // Proportions follow the real animals; they graze head-down, look up now and then, swish their tails and step.
   function animal(ctx, a, t, dpr, dark) {
     const z = a.z, tt = t + a.ph, g = (Math.sin(tt * .42) + 1) / 2, down = clamp((g - .3) / .25), walk = a.walking ? Math.sin(tt * 5.5) : 0, goat = !!a.goat;
-    const base = dark ? mix(hex(a.col), [20, 25, 40], .55) : hex(a.col), shade = mix(base, [0, 0, 0], .3), light = mix(base, [255, 255, 255], .18), hoof = dark ? [15, 15, 20] : [40, 32, 26];
-    const leg = z * (goat ? .4 : .44), bt = -leg;                                  // body bottom line
+    const base = dark ? mix(hex(a.col), [20, 25, 40], .55) : hex(a.col), shade = mix(base, [0, 0, 0], .32), light = mix(base, [255, 255, 255], .16), hoof = dark ? [15, 15, 20] : [38, 30, 24];
+    const P = (u, v) => [u * z, v * z];                                         // unit → px
     ctx.save(); ctx.translate(a.x, a.y); ctx.scale(a.face, 1); ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(0, 0, z * .62, z * .08, 0, 0, 6.29); ctx.fill();
-    // legs: tapered, with a knee and a hoof; far legs darker and drawn first
-    const legDraw = (lx, s, far) => { const sw = walk * s * z * .06, w0 = z * (goat ? .07 : .09), w1 = z * (goat ? .035 : .045);
-      ctx.fillStyle = rgba(far ? shade : base); ctx.beginPath(); ctx.moveTo(lx * z - w0 / 2, bt + z * .04); ctx.lineTo(lx * z + w0 / 2, bt + z * .04);
-      ctx.lineTo(lx * z + w1 / 2 + sw * .5, bt + leg * .55); ctx.lineTo(lx * z + w1 / 2 + sw, -z * .05); ctx.lineTo(lx * z - w1 / 2 + sw, -z * .05); ctx.lineTo(lx * z - w1 / 2 + sw * .5, bt + leg * .55); ctx.closePath(); ctx.fill();
-      ctx.fillStyle = rgba(hoof); ctx.fillRect(lx * z - w1 / 2 + sw - z * .005, -z * .05, w1 + z * .01, z * .05); };
-    legDraw(-.3, -1, true); legDraw(.3, -1, true);
-    // body: back line, hump (cow), chest, belly
-    const by = bt - z * .02;
-    const bodyG = ctx.createLinearGradient(0, by - z * .4, 0, bt + z * .06); bodyG.addColorStop(0, rgba(light)); bodyG.addColorStop(.6, rgba(base)); bodyG.addColorStop(1, rgba(shade));
-    ctx.fillStyle = bodyG; ctx.beginPath();
-    ctx.moveTo(-z * .46, by - z * (goat ? .2 : .24));
-    ctx.quadraticCurveTo(-z * .1, by - z * (goat ? .3 : .33), z * .18, by - z * (goat ? .29 : .33));
-    if (!goat) ctx.quadraticCurveTo(z * .27, by - z * .5, z * .36, by - z * .34); else ctx.lineTo(z * .3, by - z * .3);
-    ctx.quadraticCurveTo(z * .5, by - z * .2, z * .44, by + z * .02);
-    ctx.quadraticCurveTo(z * .05, by + z * .1, -z * .36, by + z * .03);
-    ctx.quadraticCurveTo(-z * .52, by - z * .05, -z * .46, by - z * (goat ? .2 : .24)); ctx.fill();
-    if (!goat && a.patch) { ctx.fillStyle = rgba(mix(base, [60, 40, 30], .5), .55); ctx.beginPath(); ctx.ellipse(-z * .18, by - z * .14, z * .13, z * .09, .4, 0, 6.29); ctx.fill(); }
-    // near legs over the body
-    legDraw(-.22, 1, false); legDraw(.36, 1, false);
-    // tail with a tuft (cow) or a short upright tail (goat)
-    ctx.strokeStyle = rgba(shade); ctx.lineWidth = z * .025;
-    if (goat) { ctx.beginPath(); ctx.moveTo(-z * .44, by - z * .2); ctx.lineTo(-z * .52, by - z * .32 + Math.sin(tt * 4) * z * .02); ctx.stroke(); }
-    else { const sw = Math.sin(tt * 2.1) * z * .07; ctx.beginPath(); ctx.moveTo(-z * .46, by - z * .2); ctx.quadraticCurveTo(-z * .54, by + z * .05, -z * .5 + sw, bt + leg * .45); ctx.stroke();
-      ctx.fillStyle = rgba(mix(shade, [0, 0, 0], .4)); ctx.beginPath(); ctx.ellipse(-z * .5 + sw, bt + leg * .5, z * .025, z * .05, 0, 0, 6.29); ctx.fill(); }
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(0, 0, z * .55, z * .06, 0, 0, 6.29); ctx.fill();
+    const H = goat ? .62 : .78, LB = goat ? .36 : .4;                           // back height, belly height (as a share of body length)
+    // a leg as a tapered two-part limb: hip/shoulder → knee/hock → fetlock → hoof
+    const leg = (hx, hy, kx, ky, fx, w0, col, sw) => { const w1 = w0 * .55;
+      ctx.fillStyle = rgba(col); ctx.beginPath(); ctx.moveTo((hx - w0 / 2) * z, -hy * z); ctx.lineTo((hx + w0 / 2) * z, -hy * z);
+      ctx.lineTo((kx + w1 / 2 + sw * .5) * z, -ky * z); ctx.lineTo((fx + w1 / 2 + sw) * z, -.035 * z); ctx.lineTo((fx - w1 / 2 + sw) * z, -.035 * z); ctx.lineTo((kx - w1 / 2 + sw * .5) * z, -ky * z); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = rgba(hoof); ctx.beginPath(); ctx.ellipse((fx + sw) * z, -.018 * z, w1 * .65 * z, .022 * z, 0, 0, 6.29); ctx.fill(); };
+    const fw = goat ? .055 : .075, s1 = walk * .04, s2 = -walk * .04;
+    // far legs (darker), drawn first
+    leg(-.3, LB + .06, -.36, LB * .5, -.3, fw, shade, s2); leg(.3, LB + .04, .31, LB * .45, .3, fw * .9, shade, s1);
+    // body: rump, a gently sloping back with the zebu hump at the withers, deep chest, belly, flank
+    const bg = ctx.createLinearGradient(0, -H * z, 0, -LB * z); bg.addColorStop(0, rgba(light)); bg.addColorStop(.6, rgba(base)); bg.addColorStop(1, rgba(shade));
+    ctx.fillStyle = bg; ctx.beginPath(); ctx.moveTo(...P(-.47, -(H - .06)));
+    ctx.bezierCurveTo(...P(-.4, -(H + .02)), ...P(-.1, -(H - .03)), ...P(.18, -(H - .01)));
+    if (!goat) { ctx.bezierCurveTo(...P(.24, -(H + .1)), ...P(.32, -(H + .1)), ...P(.36, -(H - .03))); }   // hump
+    else ctx.lineTo(...P(.32, -(H + .02)));
+    ctx.bezierCurveTo(...P(.45, -(H - .12)), ...P(.46, -(LB + .1)), ...P(.4, -LB));                      // chest
+    ctx.bezierCurveTo(...P(.15, -(LB - .04)), ...P(-.2, -(LB - .03)), ...P(-.36, -(LB + .02)));          // belly
+    ctx.bezierCurveTo(...P(-.46, -(LB + .08)), ...P(-.52, -(H - .2)), ...P(-.47, -(H - .06))); ctx.fill(); // thigh / rump
+    if (!goat && a.patch) { ctx.fillStyle = rgba(mix(base, [70, 50, 35], .55), .5); ctx.beginPath(); ctx.ellipse(-.16 * z, -(H - .16) * z, .12 * z, .08 * z, .3, 0, 6.29); ctx.fill(); }
+    // near legs: front straight with a knee, hind bending back at the hock
+    leg(.33, LB + .06, .34, LB * .48, .33, fw, base, s1); leg(-.36, LB + .1, -.42, LB * .5, -.36, fw * 1.1, base, s2);
+    // tail: long with a tuft (cow), short and upright (goat)
+    ctx.strokeStyle = rgba(shade); ctx.lineWidth = z * .02;
+    if (goat) { ctx.beginPath(); ctx.moveTo(...P(-.47, -(H - .06))); ctx.quadraticCurveTo(...P(-.53, -(H + .04)), ...P(-.5 + Math.sin(tt * 4) * .015, -(H + .1))); ctx.stroke(); }
+    else { const sw = Math.sin(tt * 2.1) * .06; ctx.beginPath(); ctx.moveTo(...P(-.47, -(H - .05))); ctx.bezierCurveTo(...P(-.52, -(H - .25)), ...P(-.5 + sw * .5, -LB), ...P(-.5 + sw, -(LB * .45)));
+      ctx.stroke(); ctx.fillStyle = rgba(mix(shade, [0, 0, 0], .4)); ctx.beginPath(); ctx.ellipse((-.5 + sw) * z, -(LB * .4) * z, .022 * z, .05 * z, sw, 0, 6.29); ctx.fill(); }
     // neck and head: lowered to graze or raised to look around
-    const sx0 = z * .34, sy0 = by - z * (goat ? .22 : .26);
-    const hx = z * (.56 + .06 * down), hy = lerpN(by - z * (goat ? .42 : .4), -z * .1, down), ang = lerpN(-.25, 1.15, down);
-    ctx.fillStyle = rgba(base); ctx.beginPath(); ctx.moveTo(sx0 - z * .06, sy0 - z * .1); ctx.lineTo(hx - z * .03, hy - z * .06); ctx.lineTo(hx + z * .02, hy + z * .06); ctx.lineTo(sx0 + z * .06, sy0 + z * .14); ctx.closePath(); ctx.fill();
-    if (!goat) { ctx.fillStyle = rgba(mix(base, shade, .4)); ctx.beginPath(); ctx.moveTo(sx0, sy0 + z * .12); ctx.quadraticCurveTo(lerpN(sx0, hx, .5), lerpN(sy0, hy, .5) + z * .16, hx, hy + z * .04); ctx.lineTo(sx0 + z * .05, sy0 + z * .1); ctx.fill(); } // dewlap
-    ctx.save(); ctx.translate(hx, hy); ctx.rotate(ang);
-    const hl = z * (goat ? .2 : .24);
-    ctx.fillStyle = rgba(base); ctx.beginPath(); ctx.moveTo(-hl * .2, -hl * .32); ctx.quadraticCurveTo(hl * .55, -hl * .36, hl * .95, -hl * .08); ctx.quadraticCurveTo(hl * 1.05, hl * .14, hl * .8, hl * .22); ctx.quadraticCurveTo(hl * .3, hl * .3, -hl * .2, hl * .2); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = rgba(mix(base, [60, 40, 40], goat ? .3 : .45)); ctx.beginPath(); ctx.ellipse(hl * .86, hl * .05, hl * .17, hl * .17, 0, 0, 6.29); ctx.fill();          // muzzle
-    ctx.fillStyle = rgba(shade); ctx.beginPath(); ctx.ellipse(-hl * .05, goat ? hl * .12 : -hl * .3, hl * .28, hl * .1, goat ? 1.2 : -.5, 0, 6.29); ctx.fill();           // ear
-    ctx.strokeStyle = rgba(goat ? mix(base, [255, 255, 255], .25) : hex('#D9CBB0')); ctx.lineWidth = z * .03; ctx.beginPath();                                    // horns
-    if (goat) { ctx.moveTo(hl * .05, -hl * .3); ctx.quadraticCurveTo(-hl * .2, -hl * .7, -hl * .45, -hl * .45); } else { ctx.moveTo(hl * .12, -hl * .3); ctx.quadraticCurveTo(hl * .05, -hl * .6, hl * .25, -hl * .65); } ctx.stroke();
-    ctx.fillStyle = 'rgba(10,10,10,.85)'; ctx.beginPath(); ctx.arc(hl * .38, -hl * .1, hl * .05, 0, 6.29); ctx.fill();                                                  // eye
-    if (goat) { ctx.fillStyle = rgba(shade); ctx.beginPath(); ctx.moveTo(hl * .7, hl * .2); ctx.lineTo(hl * .62, hl * .5); ctx.lineTo(hl * .78, hl * .24); ctx.fill(); }  // beard
+    const nx = .36, ny = H - .08, hx = .58 + .02 * down, hyy = lerpN(H + .02, .14, down), ang = lerpN(.35, 1.25, down);
+    ctx.fillStyle = rgba(base); ctx.beginPath(); ctx.moveTo(...P(nx - .08, -(ny + .06))); ctx.quadraticCurveTo(...P((nx + hx) / 2, -((ny + hyy) / 2 + .08)), ...P(hx - .02, -(hyy + .05)));
+    ctx.lineTo(...P(hx + .03, -(hyy - .06))); ctx.quadraticCurveTo(...P((nx + hx) / 2 + .02, -((ny + hyy) / 2 - .1)), ...P(nx + .06, -(ny - .16))); ctx.closePath(); ctx.fill();
+    if (!goat) { ctx.fillStyle = rgba(mix(base, shade, .35)); ctx.beginPath(); ctx.moveTo(...P(nx + .04, -(ny - .14))); ctx.quadraticCurveTo(...P((nx + hx) / 2, -((ny + hyy) / 2 - .2)), ...P(hx - .02, -(hyy - .06))); ctx.lineTo(...P(hx - .04, -(hyy - .02))); ctx.closePath(); ctx.fill(); } // dewlap
+    ctx.save(); ctx.translate(hx * z, -hyy * z); ctx.rotate(ang); const hl = z * (goat ? .2 : .24);
+    ctx.fillStyle = rgba(base); ctx.beginPath(); ctx.moveTo(-hl * .15, -hl * .3); ctx.bezierCurveTo(hl * .35, -hl * .38, hl * .75, -hl * .22, hl * .95, -hl * .02); ctx.bezierCurveTo(hl * 1.02, hl * .16, hl * .8, hl * .26, hl * .55, hl * .22); ctx.bezierCurveTo(hl * .25, hl * .2, -hl * .1, hl * .24, -hl * .15, -hl * .3); ctx.fill();
+    ctx.fillStyle = rgba(mix(base, [60, 40, 40], goat ? .3 : .42)); ctx.beginPath(); ctx.ellipse(hl * .86, hl * .06, hl * .15, hl * .15, 0, 0, 6.29); ctx.fill();                       // muzzle
+    ctx.fillStyle = rgba(shade); ctx.beginPath(); ctx.ellipse(-hl * .02, goat ? hl * .1 : -hl * .26, hl * .24, hl * .08, goat ? 1.1 : -.35, 0, 6.29); ctx.fill();                          // ear
+    ctx.strokeStyle = rgba(goat ? mix(base, [255, 255, 255], .3) : hex('#D9CBB0')); ctx.lineWidth = z * .022; ctx.beginPath();                                                       // horns
+    if (goat) { ctx.moveTo(hl * .1, -hl * .28); ctx.quadraticCurveTo(-hl * .12, -hl * .62, -hl * .38, -hl * .42); } else { ctx.moveTo(hl * .1, -hl * .28); ctx.quadraticCurveTo(hl * .02, -hl * .5, hl * .18, -hl * .56); } ctx.stroke();
+    ctx.fillStyle = 'rgba(12,10,10,.9)'; ctx.beginPath(); ctx.arc(hl * .4, -hl * .1, hl * .045, 0, 6.29); ctx.fill();                                                                 // eye
+    if (goat) { ctx.fillStyle = rgba(shade); ctx.beginPath(); ctx.moveTo(hl * .72, hl * .2); ctx.lineTo(hl * .66, hl * .46); ctx.lineTo(hl * .8, hl * .24); ctx.fill(); }               // beard
     ctx.restore(); ctx.restore();
+  }
+  // people resting in the shade beneath the tree: a father leaning on the trunk, a mother in a sari, a child.
+  // (X, Y) is the tree's base, S its scale, wb the trunk width in px.
+  function people(ctx, X, Y, S, t, dark, wb) {
+    const h = S * .075, k = dark ? .5 : 0, col = c => rgba(mix(hex(c), [20, 25, 40], k)), skin = col('#B07A52'), hair = col('#1E1612');
+    const breathe = Math.sin(t * 1.4) * h * .012;
+    const seated = (x, y, sc, cloth, top, headCover, face) => { const u = h * sc;
+      ctx.save(); ctx.translate(x, y); ctx.scale(face, 1);
+      ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(0, 0, u * .6, u * .08, 0, 0, 6.29); ctx.fill();
+      ctx.fillStyle = col(cloth); ctx.beginPath(); ctx.moveTo(-u * .32, 0); ctx.quadraticCurveTo(-u * .34, -u * .3, -u * .1, -u * .34); ctx.quadraticCurveTo(u * .3, -u * .32, u * .5, -u * .16); ctx.quadraticCurveTo(u * .56, 0, u * .4, 0); ctx.closePath(); ctx.fill();   // folded legs
+      ctx.fillStyle = col(top); ctx.beginPath(); ctx.moveTo(-u * .2, -u * .3); ctx.quadraticCurveTo(-u * .24, -u * .72 - breathe, 0, -u * .78 - breathe); ctx.quadraticCurveTo(u * .2, -u * .72 - breathe, u * .16, -u * .3); ctx.closePath(); ctx.fill();         // body
+      ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(u * .02, -u * .92 - breathe, u * .14, 0, 6.29); ctx.fill();                                                                                     // head
+      ctx.fillStyle = headCover ? col(headCover) : hair; ctx.beginPath(); ctx.arc(u * .0, -u * .96 - breathe, u * .15, Math.PI * .95, Math.PI * 2.05); ctx.fill();
+      if (headCover) { ctx.beginPath(); ctx.moveTo(-u * .15, -u * .95 - breathe); ctx.quadraticCurveTo(-u * .26, -u * .6, -u * .2, -u * .32); ctx.lineTo(-u * .1, -u * .34); ctx.quadraticCurveTo(-u * .16, -u * .6, -u * .06, -u * .9); ctx.fill(); }  // the end of the sari over the head
+      ctx.strokeStyle = skin; ctx.lineWidth = u * .07; ctx.beginPath(); ctx.moveTo(u * .1, -u * .62); ctx.quadraticCurveTo(u * .28, -u * .42, u * .3, -u * .22); ctx.stroke();        // arm resting on the knee
+      ctx.restore(); };
+    // father: white panjabi, checked lungi, leaning on the trunk; mother: green sari with a red border; child playing with a ball
+    seated(X - wb * 1.25, Y + h * .05, 1, '#3E5E8E', '#F1EEE6', null, 1);
+    seated(X + wb * 1.35, Y + h * .08, .94, '#2E7D4F', '#2E7D4F', '#C0392B', -1);
+    const bx = X + wb * 3.2, bounce = Math.abs(Math.sin(t * 2.4)) * h * .35;
+    { const u = h * .6; ctx.save(); ctx.translate(bx, Y + h * .12);
+      ctx.fillStyle = 'rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(0, 0, u * .4, u * .07, 0, 0, 6.29); ctx.fill();
+      ctx.strokeStyle = col('#3A4E7A'); ctx.lineWidth = u * .12; ctx.beginPath(); ctx.moveTo(-u * .08, 0); ctx.lineTo(-u * .04, -u * .42); ctx.moveTo(u * .1, 0); ctx.lineTo(u * .05, -u * .42); ctx.stroke();       // legs
+      ctx.fillStyle = col('#F2B33D'); ctx.beginPath(); ctx.moveTo(-u * .18, -u * .4); ctx.lineTo(u * .18, -u * .4); ctx.lineTo(u * .14, -u * .86); ctx.lineTo(-u * .14, -u * .86); ctx.closePath(); ctx.fill();     // shirt
+      ctx.strokeStyle = skin; ctx.lineWidth = u * .08; ctx.beginPath(); ctx.moveTo(u * .12, -u * .8); ctx.lineTo(u * .34, -u * .98 + Math.sin(t * 2.4) * u * .05); ctx.stroke();
+      ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, -u * 1.02, u * .16, 0, 6.29); ctx.fill(); ctx.fillStyle = hair; ctx.beginPath(); ctx.arc(0, -u * 1.06, u * .16, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = col('#E4573D'); ctx.beginPath(); ctx.arc(u * .42, -u * 1.15 - bounce / 1.2, u * .1, 0, 6.29); ctx.fill(); ctx.restore(); }
   }
   const lerpN = (a, b, k) => a + (b - a) * k;
   function herd(W, H, hy, dpr, flip) {
@@ -177,5 +221,5 @@ const Valley = (() => {
   }
   function moveHerd(herdA, t, dt, W) { herdA.forEach(a => { const cyc = (t + a.ph * 3) % 26; a.walking = cyc > 20 && cyc < 24; if (a.walking) a.x += a.face * W * .004 * dt; if (Math.abs(a.x - a.home) > W * .05) a.face = a.x > a.home ? -1 : 1; }); }
 
-  return { paint, fallRibbon, waterfall, lilies, drawLilies, animal, herd, moveHerd };
+  return { paint, fallRibbon, waterfall, lilies, drawLilies, animal, people, herd, moveHerd };
 })();

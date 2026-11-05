@@ -83,17 +83,23 @@ const Scene = (() => {
   function buildTree(seed = 20240930, o = {}) {
     const R = rng(seed), segs = [], leaves = [], T0 = o.t0 ?? 1.3, MAXD = o.maxd ?? 7, slow = o.slow ?? 1;
     (function grow(x, y, ang, len, d, t0) {
-      const bend = (R() - .5) * .3, x1 = x + Math.sin(ang) * len, y1 = y - Math.cos(ang) * len;
+      const bend = (R() - .5) * (d === 0 ? .16 : .5), x1 = x + Math.sin(ang) * len, y1 = y - Math.cos(ang) * len;
       const cx = (x + x1) / 2 + Math.cos(ang) * len * bend, cy = (y + y1) / 2 + Math.sin(ang) * len * bend;
       const dur = (.22 + len * .9) * slow, t1 = t0 + dur;
       segs.push({ x, y, cx, cy, x1, y1, w: (d === 0 ? .075 : .06 * Math.pow(.66, d)), d, t0, t1, ang });
       if (d >= 4) { const n = d >= MAXD ? 4 : d >= 6 ? 3 : 2;
         for (let k = 0; k < n; k++) { const u = d >= MAXD && k === n - 1 ? 1 : (k + 1) / (n + .5), side = k % 2 ? 1 : -1, mx = (1 - u) * (1 - u) * x + 2 * (1 - u) * u * cx + u * u * x1, my = (1 - u) * (1 - u) * y + 2 * (1 - u) * u * cy + u * u * y1;
-          leaves.push({ x: mx, y: my, a: ang - Math.PI / 2 + side * (.7 + R() * .6), s: .016 + R() * .012, t0: t1 - dur * (1 - u) + .15 + R() * .5, v: R() }); } }
+          leaves.push({ x: mx, y: my, a: ang - Math.PI / 2 + side * (.7 + R() * .6), s: .019 + R() * .013, t0: t1 - dur * (1 - u) + .15 + R() * .5, v: R() }); } }
       if (d >= MAXD) return;
-      const n = d < 2 ? 2 : (R() < .3 ? 3 : 2), spread = d === 0 ? .5 : d === 1 ? .44 : .36 + R() * .14;
-      for (let k = 0; k < n; k++) { const f = n === 1 ? 0 : k / (n - 1) - .5; grow(x1, y1, ang + f * spread * 2 + (R() - .5) * .16, len * (.74 + R() * .08), d + 1, t1 - dur * .3); }
-    })(0, 0, 0, .3, 0, T0);
+      // natural branching: uneven forks (sometimes one, two or three), uneven lengths, a pull toward the light,
+      // and small side shoots growing out along the way
+      const r0 = R(), n = d < 2 ? 2 : r0 < .12 ? 1 : r0 < .74 ? 2 : 3, spread = d === 0 ? .52 : d === 1 ? .46 : .34 + R() * .18;
+      for (let k = 0; k < n; k++) { const f = n === 1 ? 0 : k / (n - 1) - .5; let a2 = ang + f * spread * 2 + (R() - .5) * (n === 1 ? .5 : .32);
+        if (d >= 2 && Math.abs(a2) > .95) a2 *= .88;
+        grow(x1, y1, a2, len * (.62 + R() * .26), d + 1, t1 - dur * .3); }
+      if (d >= 1 && d <= 4 && R() < .7) { const u = .4 + R() * .3, mx = (1 - u) * (1 - u) * x + 2 * (1 - u) * u * cx + u * u * x1, my = (1 - u) * (1 - u) * y + 2 * (1 - u) * u * cy + u * u * y1;
+        grow(mx, my, ang + (R() < .5 ? -1 : 1) * (.7 + R() * .4), len * (.34 + R() * .14), Math.min(MAXD, d + 2), t0 + dur * u); }
+    })(0, 0, (R() - .5) * .06, .3, 0, T0);
     const roots = Array.from({ length: 9 }, (_, i) => { const a = (i / 8 - .5) * 2.5 + (R() - .5) * .2; return { a, l: .14 + R() * .14, t0: T0 - .25 + i * .04 }; });
     let minX = 0, maxX = 0, minY = 0; leaves.forEach(l => { minX = Math.min(minX, l.x); maxX = Math.max(maxX, l.x); minY = Math.min(minY, l.y); });
     const box = { minX: minX - .05, maxX: maxX + .05, minY: minY - .05 };
@@ -110,7 +116,7 @@ const Scene = (() => {
   }
   const GOLD = [hex('#C4932F'), hex('#D9AA45'), hex('#EBC266'), hex('#F6D98C')];
   const BARK = hex('#5A3E26'), BARK_LT = hex('#7A5634');
-  const LEAF_BUD = hex('#EAD27A'), LEAF_SPRING = hex('#A9D45E'), LEAF_DEEP = [hex('#3F8A37'), hex('#4E9A3E'), hex('#5FAA48')];
+  const LEAF_BUD = hex('#E6D66E'), LEAF_SPRING = hex('#8FD04E'), LEAF_DEEP = [hex('#2C8A3A'), hex('#3B9E44'), hex('#4FB650')];
   // draw the tree. st: { t (growth clock), bark 0..1 (gold → living bark), rim colour, leafT (leaf clock),
   //   wind: (x, y, h) → [dx, dy] displacement in tree units (the crown bends, the base stays put),
   //   dark 0..1 (night tone), roots: true to draw the flared base and buttress roots sinking into the soil }
@@ -138,8 +144,9 @@ const Scene = (() => {
       ctx.fillStyle = rgba(barkC); ctx.beginPath(); ctx.moveTo(X - wb * 1.25, Y + wb * .15); ctx.quadraticCurveTo(X - wb * .5, Y - wb * .1, X - wb * .5, Y - wb * 1.6);
       ctx.lineTo(X + wb * .5, Y - wb * 1.6); ctx.quadraticCurveTo(X + wb * .5, Y - wb * .1, X + wb * 1.3, Y + wb * .15); ctx.closePath(); ctx.fill();
       // grass growing over the root ends
-      ctx.strokeStyle = rgba(tone(hex('#3E7A30')), .9); ctx.lineWidth = Math.max(.8, dpr);
-      for (let i = 0; i < 40; i++) { const gx = X + (i / 39 - .5) * wb * 7.5, gy = Y + wb * (.2 + ((i * 37) % 7) / 40), l = wb * (.35 + ((i * 13) % 5) / 12);
+      ctx.strokeStyle = rgba(tone(hex('#4A8A3A')), .8);
+      ctx.lineWidth = Math.max(.6, dpr * .7);
+      for (let i = 0; i < 90; i++) { const gx = X + (i / 89 - .5) * wb * 7.5 + ((i * 53) % 9 - 4) * dpr, gy = Y + wb * (.2 + ((i * 37) % 7) / 40), l = wb * (.12 + ((i * 13) % 5) / 30);
         ctx.beginPath(); ctx.moveTo(gx, gy); ctx.quadraticCurveTo(gx + l * .15, gy - l * .6, gx + l * .3 * (i % 2 ? 1 : -1), gy - l); ctx.stroke(); }
     }
     if (bark < 1) { ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = rgba(hex('#F2C35A'), .07 * (1 - bark));
