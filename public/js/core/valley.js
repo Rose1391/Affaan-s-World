@@ -34,8 +34,6 @@ const Valley = (() => {
     g = x.createLinearGradient(0, wfTop, 0, wfBot); g.addColorStop(0, rgba(mix(p.river, [255, 255, 255], .35), .75)); g.addColorStop(1, rgba(mix(p.river, [255, 255, 255], .6), .9));
     if (!opt.split) {
       fallPath(); x.fillStyle = g; x.fill();
-      x.fillStyle = rgba(mix(p.mid, [0, 0, 0], .35), .7); x.beginPath(); x.ellipse(sx(fx), wfLedge + H * .002, fallW(wfLedge) * .62, H * .0025, 0, 0, 6.29); x.fill();
-      x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(sx(fx), wfLedge, fallW(wfLedge) * .75, H * .004, 0, 0, 6.29); x.fill();
     }
     // 3) the village line: homesteads in clusters — each on its raised mound with do-chala houses (two-sloped tin or
     //    thatch roofs), mango and jackfruit trees, banana plants, tall betel-nut and coconut palms; a small mosque
@@ -81,7 +79,7 @@ const Valley = (() => {
         const shade = (n3(row * 1.7 + col * 3.3) - .5) * .12; x.fillStyle = rgba(mix(mix(fieldC, p.near, .25 + v0 * .3), shade > 0 ? [255, 250, 210] : [0, 0, 0], Math.abs(shade)), .35 + v0 * .3);
         x.beginPath(); x.moveTo(l, y0); x.lineTo(r, y0); x.lineTo(r1, y1); x.lineTo(l1, y1); x.closePath(); x.fill(); } }
     // 5) the river: from the waterfall pool, wide and winding toward us
-    const y0 = wfBot - H * .014, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v) : fx + (.4 - fx) * v - .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v)), rw = v => fallW(wfBot) * .5 + W * .35 * Math.pow(v, 1.3), ry = v => y0 + (H - y0) * v;
+    const y0 = wfBot - H * .014, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * (Math.sin(v * 5.2 + .2) * (.25 + .75 * v) - Math.sin(.2) * .25) : fx + (.4 - fx) * v - .14 * (Math.sin(v * 5.2 + .2) * (.25 + .75 * v) - Math.sin(.2) * .25)), rw = v => fallW(wfBot) * .5 + W * .35 * Math.pow(v, 1.3), ry = v => y0 + (H - y0) * v;
     const rx = opt.split ? (c.riverLayer = canvas(W, H)).getContext('2d') : x;
     rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) - rw(v), ry(v)); } for (let i = 80; i >= 0; i--) { const v = i / 80; rx.lineTo(rv(v) + rw(v), ry(v)); } rx.closePath();
     g = rx.createLinearGradient(0, y0, 0, H); g.addColorStop(0, rgba(mix(p.river, p.haze, .45))); g.addColorStop(.4, rgba(mix(p.river, [30, 70, 100], .3))); g.addColorStop(1, rgba(mix(p.river, [10, 35, 55], .6)));
