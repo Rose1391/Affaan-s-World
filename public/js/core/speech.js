@@ -113,15 +113,57 @@ const Speech = (function () {
     }
   }
   let token = 0;
+  // Queued playback: every piece (English, then Bangla) is handed to the phone at once, so it prepares the Bangla voice
+  // while still speaking the English and the Bangla follows almost immediately ("Cow" → "গরু"). Phones that do not
+  // play a queue properly fall back to speaking one piece at a time (remembered).
+  let oneByOne = false; try { oneByOne = localStorage.getItem('affaan_tts_seq') === '1'; } catch (e) { }
+  function build(text, lang, rate, voice) {
+    const u = new SpeechSynthesisUtterance(text), bn = lang.startsWith('bn');
+    u.lang = tag(lang); if (voice && !plain) u.voice = voice;
+    u.rate = bn ? Math.min(1, Math.max(.82, (rate || .9) + .06)) : Math.min(1, Math.max(.75, rate || .9));
+    u.pitch = bn ? 1 : 1.04; u.volume = 1; return u;
+  }
+  async function pieces(parts) {
+    await ready(); const out = [];
+    for (const p of parts) { if (!p || !p[0]) continue; const lang = p[1] || 'en-US', bn = lang.startsWith('bn'), voice = pick(bn ? 'bn-BD' : lang);
+      if (bn && !voice && voices.length && !voices.some(v => /^bn/i.test(tag(v.lang)))) { diag.last = 'no Bangla voice on this device'; continue; }
+      for (const c of chunks(clean(p[0], bn))) out.push({ text: c, lang: bn ? 'bn-BD' : lang, rate: p[2], voice, bn }); }
+    return out;
+  }
+  function playQueue(list, my) {
+    return new Promise(res => {
+      let started = 0, ended = 0, done = false; const t0 = performance.now();
+      const fin = r => { if (done) return; done = true; clearInterval(watch); clearTimeout(cap); res(r); };
+      const us = list.map(it => { let u; try { u = build(it.text, it.lang, it.rate, it.voice); } catch (e) { return null; }
+        u.onstart = () => { started++; }; u.onend = () => { ended++; if (ended >= us.length) fin('ok'); };
+        u.onerror = e => { const er = (e && e.error) || 'error'; diag.last = er; diag.errors++; if (er === 'not-allowed') unlocked = false; ended++; if (ended >= us.length) fin(started ? 'ok' : 'fail'); }; return u; }).filter(Boolean);
+      if (!us.length) return fin('ok');
+      const total = list.reduce((n, it) => n + it.text.length * (it.bn ? 260 : 180), 0);
+      const watch = setInterval(() => { if (my !== token) return fin('stopped');
+        if (speechSynthesis.speaking || speechSynthesis.pending) { if (speechSynthesis.speaking && !started) started = 1; return; }
+        if (started || performance.now() - t0 > 3000) fin(started ? 'ok' : 'nostart'); }, 100);
+      const cap = setTimeout(() => fin(started ? 'ok' : 'nostart'), 6000 + total);
+      try { us.forEach(u => speechSynthesis.speak(u)); if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) { diag.last = 'speak: ' + e.message; fin('fail'); }
+    });
+  }
   async function seq(parts) {
     if (!ok || !enabled) return;
     unlock();
     const my = ++token; busy = true;
     try { speechSynthesis.cancel(); } catch (e) { }
     await sleep(120);                                           // let cancel settle (iOS / Chrome Android)
-    try { for (let i = 0; i < parts.length; i++) { const p = parts[i]; if (my !== token) return; if (!p || !p[0]) continue;
-      await speakOne(p[0], p[1] || 'en-US', p[2], my);
-      if (i < parts.length - 1) await sleep(120); } }        // a short breath between English and Bangla
+    try {
+      if (!oneByOne) {
+        const list = await pieces(parts); if (my !== token) return;
+        const r = await playQueue(list, my);
+        if (r === 'ok' || r === 'stopped' || my !== token) return;
+        oneByOne = true; try { localStorage.setItem('affaan_tts_seq', '1'); } catch (e) { }   // this phone needs one at a time
+        try { speechSynthesis.cancel(); } catch (e) { } await sleep(120);
+      }
+      for (let i = 0; i < parts.length; i++) { const p = parts[i]; if (my !== token) return; if (!p || !p[0]) continue;
+        await speakOne(p[0], p[1] || 'en-US', p[2], my);
+        if (i < parts.length - 1) await sleep(60); }
+    }
     catch (e) { diag.last = 'seq: ' + e.message; }
     finally { if (my === token) { busy = false; const w = waiters; waiters = []; w.forEach(f => f()); } }
   }
@@ -132,7 +174,7 @@ const Speech = (function () {
   function isEnabled() { return enabled; }
   function setVoice(base, uri) { try { if (uri) localStorage.setItem(prefKey(base), uri); else localStorage.removeItem(prefKey(base)); } catch (e) { } }
   function list(base) { return candidates(base === 'bn' ? 'bn-BD' : 'en-US').map(v => ({ uri: v.voiceURI || v.name, name: v.name, lang: v.lang })); }
-  function resetPlain() { plain = false; try { localStorage.removeItem('affaan_tts_plain'); } catch (e) { } }
+  function resetPlain() { plain = false; oneByOne = false; try { localStorage.removeItem('affaan_tts_plain'); localStorage.removeItem('affaan_tts_seq'); } catch (e) { } }
   function voiceInfo() { load(); return { ok, plain, last: diag.last, errors: diag.errors, count: voices.length, en: (pick('en-US') || {}).name || null, bn: (pick('bn-BD') || {}).name || null, bnLang: (pick('bn-BD') || {}).lang || null, unlocked }; }
   return { ok, seq, stop, idle, resetPlain, setEnabled, isEnabled, hasBangla, unlock, voiceInfo, list, setVoice, clean, chunks, isBusy: () => busy };
 })();

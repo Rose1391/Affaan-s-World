@@ -1,7 +1,7 @@
 /* Affaan's World service worker — offline-first.
    App shell is precached; same-origin GETs are served cache-first and refreshed in
    the background. Supabase (cross-origin) is never cached. Bump VERSION on deploys. */
-const VERSION = 'affaan-v7.9.2';
+const VERSION = 'affaan-v7.9.3';
 const SHELL = [
     './',
     './config.js',
