@@ -102,14 +102,15 @@ const Opening = (() => {
       ctx.globalAlpha = day; ctx.drawImage(lands[2], 0, 0); ctx.globalAlpha = 1;
       const L = lands[2], f = L.fall, rv = L.river;
       // the waterfall begins, falls, fills its pool
-      const fk = sm(4, 6.2, t); Valley.fallRibbon(ctx, f, fk, dpr); if (fk >= 1) Valley.waterfall(ctx, f, t, dpr, .9 * (1 - rain * .3));
-      const pool = sm(5.8, 6.8, t); if (pool > 0) { ctx.fillStyle = `rgba(255,255,255,${.5 * pool})`; ctx.beginPath(); ctx.ellipse(f.x, f.bot, f.fw(f.bot) * .85 * pool, H * .004, 0, 0, 6.29); ctx.fill(); }
+      const fk = sm(4, 6.2, t); Valley.fallRibbon(ctx, f, fk, dpr);
+      /* the river layer carries the fall's foot and white water */
       // the river carves its way toward us (revealed down the screen, with a bright leading edge)
       const rk = sm(6.5, 10, t); if (rk > 0) { const yEdge = rv.ry(rk); const k2 = dawn * (1 - day);
         ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, yEdge); ctx.clip();
         ctx.globalAlpha = 1 - day; ctx.drawImage(lands[k2 > .01 ? 1 : 0].riverLayer, 0, 0); ctx.globalAlpha = day; ctx.drawImage(L.riverLayer, 0, 0); ctx.globalAlpha = 1; ctx.restore();
         if (rk < 1) { ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.ellipse(rv.rv(rk), yEdge, rv.rw(rk) * 1.02, 3 * dpr, 0, 0, 6.29); ctx.fill(); }
         if (rk >= 1) Scene.glints(ctx, rv, t, .8 * (1 - rain * .6), dpr, '255,240,210'); }
+      if (fk >= 1) Valley.waterfall(ctx, f, t, dpr, .9 * (1 - rain * .3));   // streaks and spray on top, so the fall pours into the river
       const lk = sm(10, 12, t); if (lk > 0) { ctx.globalAlpha = lk; Valley.drawLilies(ctx, lil, rv, t, dt, dpr, false); ctx.globalAlpha = 1; }
       // rain ripples
       if (rain > .2) { if (Math.random() < rain) { const v = .1 + Math.random() * .88; ripples.push({ x: rv.rv(v) + (Math.random() - .5) * rv.rw(v) * 1.6, y: rv.ry(v), r: (2 + v * 8) * dpr, a: 0 }); }

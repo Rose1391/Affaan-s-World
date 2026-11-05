@@ -29,12 +29,12 @@ const Valley = (() => {
       x.restore(); }
     // the waterfall: narrow at the lip, widening as it falls, broken by a rock ledge
     const wfTop = mt(fx) + H * .015, wfBot = hy + H * .008, wfW = W * .022, wfLedge = wfTop + (wfBot - wfTop) * .55;
-    const fallW = y => wfW * (.35 + .65 * clamp((y - wfTop) / (wfBot - wfTop)));
+    const fallW = y => { const k = clamp((y - wfTop) / (wfBot - wfTop)); return wfW * (.35 + .65 * k + .45 * Math.pow(k, 5)); };
     const fallPath = () => { x.beginPath(); for (let y = wfTop; y <= wfBot; y += 2 * dpr) x.lineTo(sx(fx) - fallW(y) / 2 + Math.sin(y * .09) * dpr * 1.2, y); for (let y = wfBot; y >= wfTop; y -= 2 * dpr) x.lineTo(sx(fx) + fallW(y) / 2 + Math.sin(y * .07 + 2) * dpr * 1.2, y); x.closePath(); };
     g = x.createLinearGradient(0, wfTop, 0, wfBot); g.addColorStop(0, rgba(mix(p.river, [255, 255, 255], .35), .75)); g.addColorStop(1, rgba(mix(p.river, [255, 255, 255], .6), .9));
     if (!opt.split) {
       fallPath(); x.fillStyle = g; x.fill();
-      x.fillStyle = rgba(mix(p.mid, [0, 0, 0], .45)); x.beginPath(); x.ellipse(sx(fx) - fallW(wfLedge) * .9, wfLedge, fallW(wfLedge) * .7, H * .006, -.2, 0, 6.29); x.fill();
+      x.fillStyle = rgba(mix(p.mid, [0, 0, 0], .35), .7); x.beginPath(); x.ellipse(sx(fx), wfLedge + H * .002, fallW(wfLedge) * .62, H * .0025, 0, 0, 6.29); x.fill();
       x.fillStyle = 'rgba(255,255,255,.55)'; x.beginPath(); x.ellipse(sx(fx), wfLedge, fallW(wfLedge) * .75, H * .004, 0, 0, 6.29); x.fill();
     }
     // 3) the village line: homesteads in clusters — each on its raised mound with do-chala houses (two-sloped tin or
@@ -81,16 +81,18 @@ const Valley = (() => {
         const shade = (n3(row * 1.7 + col * 3.3) - .5) * .12; x.fillStyle = rgba(mix(mix(fieldC, p.near, .25 + v0 * .3), shade > 0 ? [255, 250, 210] : [0, 0, 0], Math.abs(shade)), .35 + v0 * .3);
         x.beginPath(); x.moveTo(l, y0); x.lineTo(r, y0); x.lineTo(r1, y1); x.lineTo(l1, y1); x.closePath(); x.fill(); } }
     // 5) the river: from the waterfall pool, wide and winding toward us
-    const y0 = wfBot - H * .004, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v) : fx + (.4 - fx) * v - .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v)), rw = v => W * (wfW / W * .5 + .35 * Math.pow(v, 1.3)) + (1 - clamp(v * 12)) * W * .004, ry = v => y0 + (H - y0) * v;
+    const y0 = wfBot - H * .014, rv = v => W * (flip > 0 ? fx + (.6 - fx) * v + .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v) : fx + (.4 - fx) * v - .14 * Math.sin(v * 5.2 + .2) * (.25 + .75 * v)), rw = v => fallW(wfBot) * .5 + W * .35 * Math.pow(v, 1.3), ry = v => y0 + (H - y0) * v;
     const rx = opt.split ? (c.riverLayer = canvas(W, H)).getContext('2d') : x;
     rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) - rw(v), ry(v)); } for (let i = 80; i >= 0; i--) { const v = i / 80; rx.lineTo(rv(v) + rw(v), ry(v)); } rx.closePath();
     g = rx.createLinearGradient(0, y0, 0, H); g.addColorStop(0, rgba(mix(p.river, p.haze, .45))); g.addColorStop(.4, rgba(mix(p.river, [30, 70, 100], .3))); g.addColorStop(1, rgba(mix(p.river, [10, 35, 55], .6)));
     rx.fillStyle = g; rx.fill();
     // banks: soft dark edge with a sandy lip
-    for (const side of [-1, 1]) { rx.strokeStyle = rgba(mix(p.near, [0, 0, 0], .4), .75); rx.lineWidth = 2.4 * dpr; rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * rw(v), ry(v)); } rx.stroke();
-      rx.strokeStyle = rgba(mix(hex('#D8C08A'), p.haze, .3), .35); rx.lineWidth = 1.4 * dpr; rx.beginPath(); for (let i = 0; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * (rw(v) + 3 * dpr * (1 + v)), ry(v)); } rx.stroke(); }
+    for (const side of [-1, 1]) { rx.strokeStyle = rgba(mix(p.near, [0, 0, 0], .4), .75); rx.lineWidth = 2.4 * dpr; rx.beginPath(); for (let i = 4; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * rw(v), ry(v)); } rx.stroke();
+      rx.strokeStyle = rgba(mix(hex('#D8C08A'), p.haze, .3), .35); rx.lineWidth = 1.4 * dpr; rx.beginPath(); for (let i = 5; i <= 80; i++) { const v = i / 80; rx.lineTo(rv(v) + side * (rw(v) + 3 * dpr * (1 + v)), ry(v)); } rx.stroke(); }
     // white water where the fall meets the river (no round pool: the river grows straight out of the fall)
-    { const fw = fallW(wfBot); rx.fillStyle = 'rgba(255,255,255,.55)'; rx.beginPath(); rx.ellipse(sx(fx), wfBot, fw * .85, H * .004, 0, 0, 6.29); rx.fill(); }
+    { const fw = fallW(wfBot), fy = y0 - H * .012; g = rx.createLinearGradient(0, fy, 0, wfBot + H * .006); g.addColorStop(0, rgba(mix(p.river, [255, 255, 255], .6), .92)); g.addColorStop(1, rgba(mix(p.river, [255, 255, 255], .75), .0));
+      rx.fillStyle = g; rx.beginPath(); rx.moveTo(sx(fx) - fallW(fy) / 2, fy); rx.lineTo(sx(fx) + fallW(fy) / 2, fy); rx.lineTo(sx(fx) + fw * .5, wfBot + H * .006); rx.lineTo(sx(fx) - fw * .5, wfBot + H * .006); rx.closePath(); rx.fill();
+      for (let k = 0; k < 3; k++) { const v = .006 + k * .016, a = .32 * (1 - k / 3); rx.fillStyle = `rgba(255,255,255,${a})`; rx.beginPath(); rx.ellipse(rv(v) + (k - 1) * rw(v) * .12, ry(v), rw(v) * (.6 - k * .08), H * (.0028 - k * .0004), 0, 0, 6.29); rx.fill(); } }
     // 6) meadow grass, reeds along the banks, framing shrubs
     for (let i = 0; i < 2600; i++) { const v = .5 + Math.pow(R(), .7) * .5, px = R() * W, py = hy + (H - hy) * v, len = (3 + R() * 9) * dpr * (.4 + v), lean = (R() - .5) * 4 * dpr;
       const vv = clamp((py - y0) / (H - y0)); if (Math.abs(px - rv(vv)) < rw(vv) + 2 * dpr) continue;
@@ -113,8 +115,8 @@ const Valley = (() => {
     for (let i = 0; i < 14; i++) { const u = (i / 13 - .5) * .85, ph = ((t * (.75 + (i % 3) * .12) + i * .37) % 1), y = f.top + ph * len, y2 = Math.min(f.bot, y + len * .14);
       ctx.globalAlpha = a * (.4 + .5 * Math.sin(ph * Math.PI)); ctx.beginPath(); ctx.moveTo(f.x + u * f.fw(y), y); ctx.lineTo(f.x + u * f.fw(y2), y2); ctx.stroke(); }
     ctx.globalAlpha = a;
-    const m = ctx.createRadialGradient(f.x, f.bot, 0, f.x, f.bot, f.w * 1.6); // spray m.addColorStop(0, `rgba(255,255,255,${.55 + .1 * Math.sin(t * 2)})`); m.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = m; ctx.beginPath(); ctx.ellipse(f.x, f.bot - f.w * .3, f.w * 1.3, f.w * 1.2, 0, 0, 6.29); ctx.fill(); ctx.restore();
+    const m = ctx.createRadialGradient(f.x, f.bot - f.w * .2, 0, f.x, f.bot - f.w * .2, f.w * 1.1); m.addColorStop(0, `rgba(255,255,255,${.38 + .08 * Math.sin(t * 2)})`); m.addColorStop(1, 'rgba(255,255,255,0)');   // spray
+    ctx.fillStyle = m; ctx.beginPath(); ctx.arc(f.x, f.bot - f.w * .2, f.w * 1.1, 0, 6.29); ctx.fill(); ctx.restore();
   }
 
   // the waterfall ribbon, revealed from the lip down (k = 0..1), for the opening
@@ -122,13 +124,15 @@ const Valley = (() => {
     if (k <= 0) return; const yEnd = f.top + (f.bot - f.top) * Math.min(1, k);
     const g = ctx.createLinearGradient(0, f.top, 0, f.bot); g.addColorStop(0, rgba(mix(f.river, [255, 255, 255], .35), .8)); g.addColorStop(1, rgba(mix(f.river, [255, 255, 255], .6), .92));
     ctx.fillStyle = g; ctx.beginPath(); for (let y = f.top; y <= yEnd; y += 2 * dpr) ctx.lineTo(f.x - f.fw(y) / 2 + Math.sin(y * .09) * dpr * 1.2, y); for (let y = yEnd; y >= f.top; y -= 2 * dpr) ctx.lineTo(f.x + f.fw(y) / 2 + Math.sin(y * .07 + 2) * dpr * 1.2, y); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.ellipse(f.x, yEnd, f.fw(yEnd) * .7, 2 * dpr, 0, 0, 6.29); ctx.fill();
+    if (k < 1) { ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.beginPath(); ctx.ellipse(f.x, yEnd, f.fw(yEnd) * .45, 2 * dpr, 0, 0, 6.29); ctx.fill(); }
   }
   // water lilies drifting downstream (v = position along the river, s = across)
   function lilies(n, seed = 3) { const R = rng(seed); return Array.from({ length: n }, () => ({ v: .1 + R() * .85, s: (R() - .5) * 1.2, sp: .006 + R() * .006, fl: R() < .55, hue: R() < .6 ? '#F4A7C3' : '#FFF4F0', rot: R() * 6.28, sz: .8 + R() * .5 })); }
   function drawLilies(ctx, L, rv, t, dt, dpr, dark) {
     for (const l of L) { l.v += l.sp * dt * (.4 + l.v); if (l.v > 1.02) { l.v = .08; l.s = (Math.random() - .5) * 1.2; }
-      const x = rv.rv(l.v) + l.s * rv.rw(l.v) * .8 + Math.sin(t * .8 + l.rot) * 2 * dpr, y = rv.ry(l.v), r = (3 + 12 * Math.pow(l.v, 1.3)) * dpr * l.sz, rot = l.rot + Math.sin(t * .4 + l.rot) * .2;
+      const w = rv.rw(l.v), r = Math.min((3 + 12 * Math.pow(l.v, 1.3)) * dpr * l.sz, w * .45), off = Math.max(-1, Math.min(1, l.s)) * Math.max(0, w * .9 - r);
+      if (l.v < .12 || r < 1.5 * dpr) continue;                    // lilies only once the river is wide enough to hold them
+      const x = rv.rv(l.v) + off + Math.sin(t * .8 + l.rot) * Math.min(2 * dpr, w * .05), y = rv.ry(l.v), rot = l.rot + Math.sin(t * .4 + l.rot) * .2;
       ctx.fillStyle = dark ? 'rgba(20,50,30,.85)' : 'rgba(52,120,58,.95)';
       ctx.beginPath(); ctx.moveTo(x, y); ctx.ellipse(x, y, r, r * .38, 0, rot + .35, rot + 6.0); ctx.closePath(); ctx.fill();
       ctx.strokeStyle = dark ? 'rgba(80,120,90,.4)' : 'rgba(140,200,120,.55)'; ctx.lineWidth = Math.max(.6, dpr * .6); ctx.stroke();
