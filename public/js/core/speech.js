@@ -59,6 +59,7 @@ const Speech = (function () {
   }
   // split into speakable chunks (Chrome stops long utterances); keep the sentence punctuation
   function chunks(text) {
+    if (text.length <= 160) return text ? [text] : [];       // short lines in one go: each extra start costs the phone time
     const parts = text.match(/[^।!?.]+[।!?.]*/g) || [text], out = [];
     for (let p of parts) { p = p.trim(); if (!p) continue;
       while (p.length > 150) { let cut = p.lastIndexOf(',', 150); if (cut < 40) cut = p.lastIndexOf(' ', 150); if (cut < 40) cut = 150; out.push(p.slice(0, cut + 1).trim()); p = p.slice(cut + 1).trim(); }
@@ -86,7 +87,7 @@ const Speech = (function () {
       u.onend = () => fin('ok');
       u.onerror = e => { const er = (e && e.error) || 'error'; diag.last = er; diag.errors++; if (er === 'not-allowed') unlocked = false; fin(er === 'interrupted' || er === 'canceled' ? 'ok' : 'fail'); };
       // a "still speaking?" watch for browsers that lose the end event; a generous cap so nothing ever hangs
-      const watch = setInterval(() => { if (speechSynthesis.speaking || speechSynthesis.pending) { if (speechSynthesis.speaking) started = true; return; } if (started || performance.now() - t0 > 4000) fin(); }, 250);
+      const watch = setInterval(() => { if (speechSynthesis.speaking || speechSynthesis.pending) { if (speechSynthesis.speaking) started = true; return; } if (started || performance.now() - t0 > 4000) fin(); }, 100);
       const cap = setTimeout(() => fin(), 6000 + text.length * (bn ? 260 : 180));
       try { speechSynthesis.speak(u); if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) { diag.last = 'speak: ' + e.message; fin('fail'); }
     });
@@ -108,7 +109,7 @@ const Speech = (function () {
         const r2 = await utter(c, bn ? 'bn-BD' : lang, rate, voice, true);
         if (r2 === 'ok' && !plain) { plain = true; try { localStorage.setItem('affaan_tts_plain', '1'); } catch (e) { } }
       }
-      if (my !== token) return; await sleep(90);
+      if (my !== token) return; await sleep(30);
     }
   }
   let token = 0;
@@ -120,7 +121,7 @@ const Speech = (function () {
     await sleep(120);                                           // let cancel settle (iOS / Chrome Android)
     try { for (let i = 0; i < parts.length; i++) { const p = parts[i]; if (my !== token) return; if (!p || !p[0]) continue;
       await speakOne(p[0], p[1] || 'en-US', p[2], my);
-      if (i < parts.length - 1) await sleep(260); } }        // a natural breath between English and Bangla
+      if (i < parts.length - 1) await sleep(120); } }        // a short breath between English and Bangla
     catch (e) { diag.last = 'seq: ' + e.message; }
     finally { if (my === token) { busy = false; const w = waiters; waiters = []; w.forEach(f => f()); } }
   }
