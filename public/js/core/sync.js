@@ -175,5 +175,12 @@ const Sync = (() => {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) soon(); });
   setInterval(() => run(), 5 * 60 * 1000);
 
-  return { init, run, state, saveConfig, clearConfig, getConfig, signIn, signUp, magicLink, signOut, verifyPassword, invite, cancelInvite, members, downloadPhoto, downloadFile, shareText, storageUsed, keyRole };
+  // reminders: this device's push subscription + its upcoming reminder schedule (sent by the server job)
+  async function savePushDevice(sub, schedule) {
+    if (!client || !session) return; if (!familyId) await ensureFamily();
+    const { error } = await client.rpc('save_push_device', { p_endpoint: sub.endpoint, p_sub: sub, p_schedule: schedule, p_tz: Intl.DateTimeFormat().resolvedOptions().timeZone || '' });
+    if (error) throw error;
+  }
+  async function removePushDevice(endpoint) { if (!client || !session) return; const { error } = await client.rpc('remove_push_device', { p_endpoint: endpoint }); if (error) throw error; }
+  return { init, run, state, saveConfig, clearConfig, getConfig, signIn, signUp, magicLink, signOut, verifyPassword, invite, cancelInvite, members, downloadPhoto, downloadFile, shareText, storageUsed, keyRole, savePushDevice, removePushDevice };
 })();

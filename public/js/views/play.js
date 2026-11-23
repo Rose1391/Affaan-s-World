@@ -192,6 +192,7 @@ Views.kid = async (p) => {
   if (sub === 'music') return kidShell(musicHTML(), { title: 'Music<br><span class="bn">গান-বাজনা</span>', color: '#B0651A' });
   if (sub === 'art') return kidShell(artHTML(), { title: 'Paint<br><span class="bn">আঁকি</span>', color: '#B03A6E' });
   if (sub === 'explore') return kidShell(exploreHTML(), { title: 'World Explorer<br><span class="bn">বিশ্ব ভ্রমণ</span>', color: '#1F5E9A' });
+  if (sub === 'duas') return kidShell(duasHTML(), { title: 'Duas<br><span class="bn">দোয়া</span>', color: '#2E8B57' });
   if (sub === 'bangladesh') return kidShell(bangladeshHTML(), { title: 'Our Bangladesh<br><span class="bn">আমাদের বাংলাদেশ</span>', color: '#006A4E' });
   return kidShell(await islandHTML(), { back: false });
 };
@@ -480,3 +481,19 @@ function soundMatch(st) {
   Speech.seq([['Where is the ' + t[0] + '?', 'en-US', 0.85], [t[2] + ' কোথায়?', 'bn-BD', 0.85]]);
 }
 ACT.gAnimal = el => { if (el.dataset.v === gameTarget) { const fb = gameWin(el, soundMatch); fb.textContent = 'Yes! You found it 🎉'; fb.className = 'play-fb good'; Speech.seq([['Yes! The ' + gameTarget + '!', 'en-US', 0.85], [((GA.find(a => a[0] === gameTarget) || [])[2] || '') + '! পেয়েছ!', 'bn-BD', 0.88]]); } else gameMiss(el, 'Listen again'); };
+
+/* ---- Duas & short surahs: Abbu & Ammu's own recitation; without it only the Bangla meaning is read ---- */
+function duasHTML() {
+  const card = (d, surah) => `<button class="dua ${Voice.has('DU:' + d.id) ? 'has' : ''}" data-act="kDua" data-id="${d.id}">
+    <span class="dua-ic">${d.ic}</span><span class="dua-t"><b>${esc(d.en)}</b><span class="bn">${esc(d.bn)}</span></span>
+    ${d.ar ? `<span class="dua-ar" lang="ar" dir="rtl">${d.ar}</span><span class="dua-tr">${esc(d.tr)}</span>` : ''}
+    <span class="dua-m bn">${esc(d.mBn)}</span>${Voice.has('DU:' + d.id) ? '<span class="dua-v">🎙️</span>' : ''}</button>`;
+  const missing = [...DUAS, ...SURAHS].filter(d => !Voice.has('DU:' + d.id)).length;
+  return `<div class="kpad">
+    ${missing ? `<p class="dua-hint">🎙️ ${missing} not recorded yet — a grown-up can record them in Play → Voices → “Duas & surahs”. <span class="bn">আব্বু-আম্মুর কণ্ঠে রেকর্ড করুন।</span></p>` : ''}
+    <div class="duas">${DUAS.map(d => card(d)).join('')}</div>
+    <h3 class="dua-h">Short surahs · <span class="bn">ছোট সূরা</span></h3>
+    <div class="duas">${SURAHS.map(d => card(d, true)).join('')}</div></div>`;
+}
+ACT.kDua = el => { const d = [...DUAS, ...SURAHS].find(x => x.id === el.dataset.id); if (!d) return; popAnim(el); Kid.tap('duas'); Kid.reward(el);
+  if (Voice.has('DU:' + d.id)) Voice.play('DU:' + d.id); else Speech.seq([[d.mBn, 'bn-BD', .85]]); };

@@ -146,8 +146,11 @@ const Speech = (function () {
       try { us.forEach(u => speechSynthesis.speak(u)); if (speechSynthesis.paused) speechSynthesis.resume(); } catch (e) { diag.last = 'speak: ' + e.message; fin('fail'); }
     });
   }
-  async function seq(parts) {
-    if (!ok || !enabled) return;
+  async function seq(parts, raw) {
+    if (!enabled) return;
+    // a parent's recording of the exact line wins over the synthetic voice (Voices → Game words)
+    if (!raw && typeof Voice !== 'undefined' && Voice.textHas && (parts || []).some(p => p && p[0] && Voice.textHas(p[0]))) return Voice.sayMixed(parts);
+    if (!ok) return;
     unlock();
     const my = ++token; busy = true;
     try { speechSynthesis.cancel(); } catch (e) { }

@@ -1,7 +1,7 @@
 /* Affaan's World service worker — offline-first.
    App shell is precached; same-origin GETs are served cache-first and refreshed in
    the background. Supabase (cross-origin) is never cached. Bump VERSION on deploys. */
-const VERSION = 'affaan-v7.9.6';
+const VERSION = 'affaan-v8.0';
 const SHELL = [
     './',
     './config.js',
@@ -36,6 +36,7 @@ const SHELL = [
     './js/content/personalities.js',
     './js/content/countries.js',
     './js/content/bangladesh.js',
+    './js/content/duas.js',
     './js/content/who-growth.js',
     './js/core/backup.js',
     './js/core/calendars.js',
@@ -51,6 +52,7 @@ const SHELL = [
     './js/core/sfx.js',
     './js/core/speech.js',
     './js/core/sync.js',
+    './js/core/reminders.js',
     './js/core/util.js',
     './js/core/voice.js',
     './js/core/weather.js',
@@ -85,7 +87,7 @@ self.addEventListener('install', e => {
 // flags are fetched quietly after activation so the World Explorer works offline too
 const warmFlags = () => caches.open(VERSION).then(async c => { for (const f of FLAGS) { if (!(await c.match(f))) { try { const r = await fetch(f); if (r.ok) await c.put(f, r); } catch (e) { return; } } } });
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION).map(k => caches.delete(k)))).then(() => self.clients.claim()).then(() => { warmFlags(); }));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && k !== 'affaan-reminders').map(k => caches.delete(k)))).then(() => self.clients.claim()).then(() => { warmFlags(); }));
 });
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
@@ -99,4 +101,25 @@ self.addEventListener('fetch', e => {
     const net = fetch(req).then(r => { if (r.ok) { const cp = r.clone(); caches.open(VERSION).then(c => c.put(req, cp)); } return r; }).catch(() => cached);
     return cached || net;
   }));
+});
+
+/* ---- reminders: Web Push from the server, periodic wake-ups (Chrome / Edge), and tap-to-open ---- */
+const RCACHE = 'affaan-reminders', RSCHED = './__reminders/schedule.json', RSHOWN = './__reminders/shown.json';
+async function rShown() { try { const r = await (await caches.open(RCACHE)).match(RSHOWN); return r ? await r.json() : {}; } catch (e) { return {}; } }
+async function rMark(id) { const s = await rShown(); s[id] = Date.now(); for (const k in s) if (Date.now() - s[k] > 60 * 864e5) delete s[k];
+  await (await caches.open(RCACHE)).put(RSHOWN, new Response(JSON.stringify(s), { headers: { 'content-type': 'application/json' } })); }
+function rShow(it, silent) { return self.registration.showNotification(it.title || "Affaan's World", { body: it.body || '', tag: it.id || 'affaan', icon: './icons/icon-192.png', badge: './icons/icon-192.png', silent: !!silent, data: { url: it.url || './' } }); }
+self.addEventListener('push', e => {
+  let it = {}; try { it = e.data ? e.data.json() : {}; } catch (x) { it = { title: "Affaan's World", body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(rShown().then(s => { const seen = it.id && s[it.id]; return (it.id ? rMark(it.id) : Promise.resolve()).then(() => rShow(it, seen)); }));
+});
+async function rDue() {
+  const r = await (await caches.open(RCACHE)).match(RSCHED); if (!r) return; const { on, list } = await r.json(); if (!on) return;
+  const s = await rShown(), now = Date.now();
+  for (const it of list || []) if (it.at <= now && now - it.at < 12 * 36e5 && !s[it.id]) { await rMark(it.id); await rShow(it); }
+}
+self.addEventListener('periodicsync', e => { if (e.tag === 'affaan-reminders') e.waitUntil(rDue()); });
+self.addEventListener('notificationclick', e => {
+  e.notification.close(); const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => { for (const c of cs) { if ('focus' in c) { c.navigate(url).catch(() => { }); return c.focus(); } } return self.clients.openWindow(url); }));
 });

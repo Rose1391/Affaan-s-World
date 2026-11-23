@@ -7,9 +7,9 @@ const SPOT_LIST = [
   ['stories', '📖', 'Stories', 'গল্প', '#14998C'], ['numbers', '🐟', 'Count fish', 'গুনি', '#2F7FB8'], ['world', '🐄', 'Farm & world', 'খামার', '#3DAA66'],
   ['music', '🥁', 'Music', 'গান-বাজনা', '#D9862B'], ['art', '🎨', 'Paint', 'আঁকি', '#E46A8C'], ['sorter', '🧩', 'Shapes', 'আকার', '#7A4FD8'],
   ['peekaboo', '🙈', 'Peekaboo', 'কুক্কু', '#F57C00'], ['bubbles', '🫧', 'Bubbles', 'বুদবুদ', '#3BA7FF'], ['people', '🌟', 'Heroes', 'মহান ব্যক্তিত্ব', '#C99A00'], ['explore', '🌍', 'World', 'বিশ্ব', '#1F7AC9'], ['bangladesh', '🇧🇩', 'Bangladesh', 'বাংলাদেশ', '#006A4E'],
-  ['games', '🎮', 'Games', 'খেলা', '#D9467E']];
+  ['games', '🎮', 'Games', 'খেলা', '#D9467E'], ['duas', '🤲', 'Duas', 'দোয়া', '#2E8B57']];
 const ISL_W = 400, ISL_H = 1110;
-const SPOTS = SPOT_LIST.map((s, i) => [...s.slice(0, 4), [92, 308, 200][i % 3], 102 + i * 64, s[4]]);
+const SPOTS = SPOT_LIST.map((s, i) => [...s.slice(0, 4), [92, 308, 200][i % 3], 102 + Math.round(i * 896 / (SPOT_LIST.length - 1)), s[4]]);
 const PICK_WHY = { family: 'Familiar faces and voices are what toddlers love most', colors: 'He is learning his first colour (30-month milestone)', stories: 'Two-word phrases → stories grow his sentences',
   peekaboo: 'Hide-and-reveal builds memory and joy', letters: 'Letter sounds start to click from 2½', music: 'Rhythm and cause-and-effect', sorter: 'Matching shapes builds thinking and fine motor', numbers: 'Counting together, one by one', art: 'Free scribbling builds the grip for writing', bubbles: 'Pure cause and effect — and colour words' };
 
@@ -262,6 +262,8 @@ async function voiceGroups() {
   const G = [];
   G.push(['Greetings & praise', 'শুভেচ্ছা', [['G:hello', `Hello ${first}! Let's play!`], ['G:yes', 'Yes! Well done!'], ['G:outside', 'Time to play outside!'], ['G:sleepy', 'Almost time to go outside…']]]);
   if (fam.length) G.push(['Family', 'পরিবার', fam.flatMap(f => [['F:' + f.id, `${f.rel}: “Hello ${first}, I’m ${f.rel}!”`], ['FQ:' + f.id, `“Where is ${f.rel}?”`]])]);
+  G.push(['Duas & surahs', 'দোয়া ও সূরা', [...DUAS.map(d => ['DU:' + d.id, `${d.ic} ${d.en} — ${d.tr}`]), ...SURAHS.map(x => ['DU:' + x.id, `${x.ic} ${x.en} · ${x.bn} (recite together)`])]]);
+  G.push(['Game words', 'খেলার কথা', GAME_LINES.map(([t]) => [Voice.tkey(t), `“${t}”`])]);
   G.push(['Letters · ABC', 'ইংরেজি অক্ষর', LETTERS_EN.map(l => ['L:en:' + l[0], `${l[0]} — “${l[0]} for ${l[1]}”`])]);
   G.push(['স্বরবর্ণ', 'Bangla vowels', BN_VOWELS.map(l => ['L:bv:' + l[0], `${l[0]} — “${l[0]} তে ${l[1]}”`])]);
   G.push(['ব্যঞ্জনবর্ণ', 'Bangla consonants', BN_CONS.map(l => ['L:bc:' + l[0], `${l[0]} — “${l[0]} তে ${l[1]}”`])]);
@@ -291,7 +293,7 @@ ACT.vRec = async el => {
   if (Voice.recording()) { const blob = await Voice.finish(); return; }
   try {
     el.classList.add('live'); el.textContent = '■ 0s';
-    const max = k.startsWith('ST:') ? 45 : 8;
+    const max = k.startsWith('DU:') ? 90 : k.startsWith('ST:') ? 45 : 8;
     const blob = await Voice.start(max, s => el.textContent = `■ ${Math.floor(s)}s`);
     el.classList.remove('live'); el.textContent = '●';
     if (!blob || blob.size < 800) { toast('Too short — hold on a little longer', 'err'); return; }

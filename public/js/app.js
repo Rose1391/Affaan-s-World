@@ -380,6 +380,8 @@ Views.settings = async () => {
   if (st.signedIn) { try { used = await Sync.storageUsed(); fam = await Sync.members(); } catch (e) { } }
   const pct = used ? Math.min(100, used.bytes / 1073741824 * 100) : 0;
   const vi = Speech.voiceInfo();
+  const rm = await Reminders.settings(), rmList = rm.on ? (await Reminders.build()).filter(x => x.at > Date.now()) : [];
+  const rmPerm = Reminders.supported() ? Notification.permission : 'unsupported';
   const me = fam.members.find(m => m.email === st.email);
   return `${pageHead('Settings', 'সেটিংস', 'Sync · backup · security · sound')}
   <div class="pad stack">
@@ -430,6 +432,19 @@ Views.settings = async () => {
         F.select('textsize', 'Text size', 'লেখার আকার', [['1', 'Normal'], ['1.12', 'Large'], ['1.25', 'Extra large']], await DB.meta.get('textsize', '1')).replace('<select', '<select data-change="setTextSize"'))}
       ${F.select('introMode', 'Opening animation', 'শুরুর অ্যানিমেশন', [['tree', 'The valley wakes (20 s)'], ['film', 'Photo film (15 s, when the frames are added)'], ['off', 'Off']], await introMode()).replace('<select', '<select data-change="setIntroMode"')}
       <div class="btnrow"><button class="btn" data-act="watchOpening">▶ Play the opening · <span class="bn">আবার দেখুন</span></button><button class="btn" data-act="watchFilm">▶ Watch the film · <span class="bn">ছবিটি দেখুন</span></button></div>
+    </section>
+
+    <section class="panel" id="remindersPanel"><h3>🔔 Reminders · <span class="bn">মনে করিয়ে দেওয়া</span></h3>
+      <p class="muted sm">Vaccine due dates, doctor follow-ups, calendar events and medicine times — as phone notifications, even when the app is closed${st.signedIn ? '' : ' (sign in to sync for that; without it they arrive while the app is open, or on Android/Edge in the background)'}.</p>
+      ${rmPerm === 'unsupported' ? `<div class="callout">This browser cannot show notifications.${/iPhone|iPad/.test(navigator.userAgent) ? ' On iPhone: Share → <b>Add to Home Screen</b>, open the app from there (iOS 16.4+), then turn reminders on.' : ''}</div>`
+      : rmPerm === 'denied' ? `<div class="callout">Notifications are blocked for this site. Allow them in the browser's site settings (🔒 in the address bar → Notifications → Allow), then come back here.</div>` : ''}
+      <div class="kv"><span>Reminders on this device</span><b>${rm.on && rmPerm === 'granted' ? 'On' : 'Off'} <button class="linkbtn" data-act="remToggle" ${rmPerm === 'unsupported' ? 'disabled' : ''}>${rm.on && rmPerm === 'granted' ? 'Turn off' : 'Turn on'}</button></b></div>
+      ${rm.on && rmPerm === 'granted' ? `
+      <div class="chips">${[['vaccines', '💉 Vaccines'], ['visits', '🩺 Follow-ups'], ['events', '📅 Events'], ['meds', '💊 Medicines']].map(([k, l]) => `<label class="switch sm"><input type="checkbox" data-change="remCat" data-k="${k}" ${rm[k] ? 'checked' : ''}><span></span> ${l}</label>`).join('')}</div>
+      ${F.row(F.text('remMorning', 'Morning reminder', 'সকালে', rm.morning, 'type="time" data-change="remTime" data-k="morning"'), F.text('remEvening', 'Day-before reminder', 'আগের দিন', rm.evening, 'type="time" data-change="remTime" data-k="evening"'))}
+      <div class="kv"><span>Coming up</span><b>${rmList.length} reminder${rmList.length === 1 ? '' : 's'} <button class="linkbtn" data-act="remTest">Send a test</button></b></div>
+      ${rmList.length ? `<div class="list sm">${rmList.slice(0, 5).map(x => `<div class="kv"><span>${esc(x.title)}</span><b class="muted">${fmtDate(isoDate(new Date(x.at)))} ${pad2(new Date(x.at).getHours())}:${pad2(new Date(x.at).getMinutes())}</b></div>`).join('')}</div>` : ''}
+      <p class="muted sm">Medicine times: add “Remind me at” times to a prescription in Health → Prescriptions. Each phone chooses for itself — turn reminders on on both parents' phones.</p>` : ''}
     </section>
 
     <section class="panel"><h3>Security · <span class="bn">নিরাপত্তা</span></h3>
@@ -497,6 +512,10 @@ async function openingFilm() {
 ACT.setLockAfter = async el => { await DB.meta.set('lockAfter', Number(el.value)); toast('Saved'); };
 ACT.changePin = () => Lock.change();
 ACT.lockNow = () => Lock.lockNow();
+ACT.remToggle = async () => { try { const c = await Reminders.settings(); if (c.on && Notification.permission === 'granted') { await Reminders.disable(); toast('Reminders off'); } else { await Reminders.enable(); toast('Reminders on 🔔'); } } catch (e) { toast(e.message, 'err'); } route(); };
+ACT.remCat = async el => { await Reminders.set(el.dataset.k, el.checked); route(); };
+ACT.remTime = async el => { if (el.value) await Reminders.set(el.dataset.k, el.value); };
+ACT.remTest = async () => { try { await Reminders.test(); toast('Test sent — check your notifications'); } catch (e) { toast(e.message, 'err'); } };
 ACT.toggleSound = () => { Speech.setEnabled(!Speech.isEnabled()); route(); };
 ACT.resetVoice = () => { Speech.resetPlain(); Speech.setVoice('en', ''); Speech.setVoice('bn', ''); toast('Voice settings reset'); route(); };
 ACT.pickVoice = el => { Speech.setVoice(el.dataset.base, el.value); el.dataset.base === 'bn' ? Speech.seq([['আসসালামু আলাইকুম, আফফান! চলো, একসাথে খেলি।', 'bn-BD', .9]]) : Speech.seq([['Hello Affaan! Let\'s play together.', 'en-US', .9]]); };
@@ -565,6 +584,7 @@ async function boot() {
   Lock.start(async () => { await migrateV4(); route(); });
   Weather.get().catch(() => { });
   Bus.on('unlocked', () => route());
+  setTimeout(() => Reminders.refresh().catch(e => console.warn('reminders', e)), 2500);
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { });
   window.addEventListener('online', () => document.body.classList.remove('is-offline'));
   window.addEventListener('offline', () => document.body.classList.add('is-offline'));

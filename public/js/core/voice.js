@@ -34,6 +34,13 @@ const Voice = (() => {
     if (keys.some(has)) { Speech.stop(); for (const k of keys) if (has(k)) await play(k); return; }
     stop(); return Speech.seq(parts);
   }
+  // recordings keyed by the spoken text itself (T:<text>), used wherever that exact line is spoken
+  const tkey = text => 'T:' + String(text).trim().replace(/[\s.!?।,]+$/u, '').toLowerCase();
+  const textHas = text => has(tkey(text));
+  async function sayMixed(parts) {
+    stop(); Speech.stop();
+    for (const p of parts) { if (!p || !p[0]) continue; if (textHas(p[0])) await play(tkey(p[0])); else await Speech.seq([p], true); }
+  }
   /* ---- recording ---- */
   function pickMime() {
     if (!window.MediaRecorder) return null;
@@ -61,5 +68,5 @@ const Voice = (() => {
   async function remove(key) { await DB.blob.del(vid(key)); await DB.del(vid(key)); await load(); }
   const safe = key => key.replace(/[^\wঀ-৿:-]/g, '_').replace(/:/g, '-');
   const ext = mime => (mime || '').includes('mp4') ? 'm4a' : (mime || '').includes('ogg') ? 'ogg' : 'webm';
-  return { idle, load, has, count, play, say, stop, start, finish, recording, save, remove, blob, safe, ext, vid };
+  return { idle, load, has, count, play, say, stop, start, tkey, textHas, sayMixed, finish, recording, save, remove, blob, safe, ext, vid };
 })();

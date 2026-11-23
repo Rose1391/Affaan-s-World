@@ -1407,3 +1407,41 @@ body.winddown .spot .sp-ic,body.winddown .ktile{animation-duration:7s}
 /* the opening title: a dark glow so it reads over the green meadow */
 #opening .op-title{filter:drop-shadow(0 0 2px rgba(0,0,0,.95)) drop-shadow(0 0 7px rgba(0,0,0,.85)) drop-shadow(0 2px 16px rgba(0,0,0,.6))}
 #opening .op-bn,#opening .op-greet{text-shadow:0 0 3px #000,0 0 10px rgba(0,0,0,.9),0 2px 14px rgba(0,0,0,.7)}
+
+/* ---- emergency card (Health → Emergency, and on the PIN screen) — always light, high contrast ---- */
+.sos-card{background:#FFFDF9;color:#1C1A18;border:2px solid #C0392B;border-radius:18px;padding:16px;margin:10px 0;text-align:left;box-shadow:0 8px 28px rgba(0,0,0,.18)}
+.sos-card .muted{color:#6B635C}
+.sos-head{display:flex;gap:12px;align-items:center;padding-bottom:12px;border-bottom:1px solid #EAD9D4}
+.sos-head .sos-ic{font-size:30px}
+.sos-head .eyebrow{display:block;color:#A82838;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.sos-head b{display:block;font-size:20px;line-height:1.2}
+.sos-head .sm{display:block;color:#514C48}
+.sos-blood{text-align:center;background:#C0392B;color:#fff;border-radius:14px;padding:6px 12px;min-width:64px}
+.sos-blood small{display:block;font-size:10px;opacity:.9}.sos-blood b{font-size:24px;line-height:1.1}
+.sos-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.sos-box{background:#F6F1EA;border-radius:12px;padding:8px 10px;min-width:0}
+.sos-box small{display:block;font-size:11px;color:#6B635C}.sos-box b{font-size:15px;overflow-wrap:anywhere}
+.sos-box.alert{background:#FDE7E3;outline:2px solid #C0392B}.sos-box.alert b{color:#A82838}
+.sos-calls{display:grid;gap:8px}
+.sos-calls p{margin:0}
+.sos-tel{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:#0F6B4E;color:#fff;text-decoration:none;font-size:14px}
+.sos-tel:first-child{background:#A82838}
+.sos-tel b{white-space:nowrap;font-size:15px}
+.sos-notes{margin:12px 0 0;padding:8px 10px;background:#FFF6DC;border-radius:10px;font-size:14px}
+.lock-sos{margin-top:14px;padding:10px 18px;border-radius:999px;border:1.5px solid rgba(255,255,255,.7);background:rgba(192,57,43,.88);color:#fff;font:600 14px "Outfit",sans-serif;cursor:pointer}
+.lock-sosview{position:relative;z-index:1;width:100%;max-width:460px;max-height:100%;overflow:auto;padding:6px 2px 20px;text-align:center}
+.lock-sosview .btn{margin-top:4px}
+@media (max-width:380px){.sos-grid{grid-template-columns:1fr}}
+
+/* ---- kid: duas ---- */
+.duas{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.dua{position:relative;display:grid;gap:4px;text-align:left;padding:14px 16px;border-radius:22px;border:0;background:#fff;color:#1C1A18;box-shadow:0 6px 0 rgba(0,0,0,.12),0 10px 24px rgba(0,0,0,.12);cursor:pointer;font:inherit}
+.dua.has{outline:3px solid #2E8B57}
+.dua-ic{font-size:38px;line-height:1}
+.dua-t b{display:block;font:800 19px "Baloo 2","Outfit",sans-serif}.dua-t .bn{font-size:15px;color:#4A6B55}
+.dua-ar{font-size:24px;line-height:1.7;color:#0F5D3E;text-align:right;font-family:"Amiri","Noto Naskh Arabic","Geeza Pro","Times New Roman",serif}
+.dua-tr{font-style:italic;color:#514C48;font-size:14px}
+.dua-m{font-size:15px;color:#2B2622}
+.dua-v{position:absolute;top:10px;right:12px;font-size:18px}
+.dua-h{margin:20px 4px 10px;color:#fff;font:800 22px "Baloo 2","Outfit",sans-serif}
+.dua-hint{margin:0 0 12px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.88);color:#1C1A18;font-size:14px}

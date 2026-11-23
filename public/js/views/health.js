@@ -1,8 +1,8 @@
 /* ============ HEALTH RECORDS: vaccines · visits · prescriptions & reports · illnesses · meals & diet ============ */
 let showOptional = false;
 Views.health = async ([tab = 'vaccines']) => {
-  const t = [['vaccines', 'Vaccines', 'টিকা'], ['visits', 'Doctor visits', 'ডাক্তার'], ['docs', 'Prescriptions & reports', 'প্রেসক্রিপশন'], ['illness', 'Illnesses', 'অসুখ'], ['diet', 'Meals & diet', 'খাদ্য']];
-  const body = tab === 'visits' ? await visitsHTML() : tab === 'docs' ? await docsHTML() : tab === 'illness' ? await illnessHTML() : tab === 'diet' ? dietHTML() : await vaccinesHTML();
+  const t = [['vaccines', 'Vaccines', 'টিকা'], ['visits', 'Doctor visits', 'ডাক্তার'], ['docs', 'Prescriptions & reports', 'প্রেসক্রিপশন'], ['illness', 'Illnesses', 'অসুখ'], ['diet', 'Meals & diet', 'খাদ্য'], ['emergency', '🚑 Emergency', 'জরুরি']];
+  const body = tab === 'emergency' ? await emergencyHTML() : tab === 'visits' ? await visitsHTML() : tab === 'docs' ? await docsHTML() : tab === 'illness' ? await illnessHTML() : tab === 'diet' ? dietHTML() : await vaccinesHTML();
   return `${pageHead('Health records', 'স্বাস্থ্য রেকর্ড', 'Vaccines · visits · medicines · illnesses · diet')}<div class="pad">${tabs(t, tab, 'healthTab')}${body}</div>`;
 };
 ACT.healthTab = el => go('health/' + el.dataset.v);
@@ -129,7 +129,7 @@ async function docsHTML() {
   const label = Object.fromEntries(DOC_TYPES);
   const active = list.filter(d => d.docType === 'prescription' && d.until && d.until >= todayISO());
   return `<button class="ghostadd" data-act="addDoc">+ Add prescription or report · <span class="bn">যোগ করুন</span></button>
-   ${active.length ? `<div class="callout blue"><b>Current medicines · <span class="bn">চলমান ওষুধ</span></b>${active.map(d => `<p>${esc(d.medicines || d.title)} <span class="muted">until ${fmtDate(d.until)}</span></p>`).join('')}</div>` : ''}
+   ${active.length ? `<div class="callout blue"><b>Current medicines · <span class="bn">চলমান ওষুধ</span></b>${active.map(d => `<p>${esc(d.medicines || d.title)} <span class="muted">until ${fmtDate(d.until)}${d.doseTimes ? ' · 🔔 ' + esc(d.doseTimes) : ''}</span></p>`).join('')}</div>` : ''}
    ${list.length ? list.map(d => recCard(d, 'docEdit', esc(d.title || label[d.docType]), [label[d.docType]?.split(' · ')[0], d.medicines && esc(d.medicines), d.notes && esc(d.notes)].filter(Boolean).join(' · '))).join('') : empty('Snap prescriptions and test reports so they are always with you.', 'প্রেসক্রিপশন ও রিপোর্টের ছবি রাখুন')}`;
 }
 ACT.addDoc = (el, e, r = {}) => Sheet.open({
@@ -137,9 +137,10 @@ ACT.addDoc = (el, e, r = {}) => Sheet.open({
   body: `${F.row(F.select('docType', 'Type', 'ধরন', DOC_TYPES, r.docType || 'prescription'), F.date('date', 'Date', 'তারিখ', r.date))}
     ${F.text('title', 'Title', 'শিরোনাম', r.title || '', 'placeholder="e.g. Dr. Rahman — cough"')}
     ${F.area('medicines', 'Medicines & dose', 'ওষুধ ও মাত্রা', r.medicines || '', 'rows="2" placeholder="Paracetamol syrup 5 ml 3×/day for 3 days"')}
-    ${F.row(F.date('until', 'Course ends', 'শেষ তারিখ', r.until || ''), F.text('notes', 'Notes', 'নোট', r.notes || ''))}${F.photos(r.photoIds || [], 'Photos', 'ছবি')}`,
+    ${F.row(F.date('until', 'Course ends', 'শেষ তারিখ', r.until || ''), F.text('doseTimes', '🔔 Remind me at', 'ওষুধের সময়', r.doseTimes || '', 'placeholder="08:00, 14:00, 20:00"'))}
+    ${F.text('notes', 'Notes', 'নোট', r.notes || '')}${F.photos(r.photoIds || [], 'Photos', 'ছবি')}`,
   save: async (fd, f) => { const photoIds = await formPhotos(f); if (!val(fd, 'title') && !val(fd, 'medicines') && !photoIds.length) throw new Error('Add a title, medicines or a photo');
-    await DB.put('document', { docType: val(fd, 'docType'), date: val(fd, 'date') || todayISO(), title: val(fd, 'title'), medicines: val(fd, 'medicines'), until: val(fd, 'until'), notes: val(fd, 'notes'), photoIds }, r.id); },
+    await DB.put('document', { docType: val(fd, 'docType'), date: val(fd, 'date') || todayISO(), title: val(fd, 'title'), medicines: val(fd, 'medicines'), until: val(fd, 'until'), doseTimes: Reminders.parseTimes(val(fd, 'doseTimes')).join(', '), notes: val(fd, 'notes'), photoIds }, r.id); },
   del: r.id ? () => DB.del(r.id) : null
 });
 ACT.docEdit = async el => ACT.addDoc(null, null, { ...(await DB.data(el.dataset.id)), id: el.dataset.id });
@@ -173,3 +174,58 @@ function dietHTML() {
     <div class="panel"><h3>Care & sickness · <span class="bn">যত্ন ও অসুস্থতা</span></h3><ul class="ticks">${grp.care.map(t => `<li>${esc(t.en)}<span class="bn">${esc(t.bn)}</span></li>`).join('')}</ul></div>`;
   return tabsH + `<p class="muted sm">${esc(grp.titleEn)} · <span class="bn">${esc(grp.titleBn)}</span> — from the CMH dietician</p>` + measure + grp.schedule.map(m => `<div class="meal"><span class="mi">${m.emoji}</span><div><span class="mt">${esc(m.timeEn)}</span> <span class="bn muted sm">${esc(m.timeBn)}</span><p>${esc(m.en)}</p><p class="bn">${esc(m.bn)}</p></div></div>`).join('');
 }
+
+/* ---------- emergency card: everything a doctor or helper needs, one tap from the PIN screen ---------- */
+const BLOOD = ['', 'A+', 'A−', 'B+', 'B−', 'AB+', 'AB−', 'O+', 'O−'];
+const telHref = p => 'tel:' + String(p || '').replace(/[^\d+]/g, '');
+const telBtn = (label, phone) => phone ? `<a class="sos-tel" href="${esc(telHref(phone))}"><span>${esc(label)}</span><b>📞 ${esc(phone)}</b></a>` : '';
+async function emergencyData() {
+  const card = await DB.data('emergency:card') || {};
+  const meds = (await DB.list('document')).filter(d => d.docType === 'prescription' && d.until && d.until >= todayISO()).map(d => d.medicines || d.title).filter(Boolean);
+  const g = (await DB.list('growth')).filter(x => x.weight != null).sort((a, b) => b.date.localeCompare(a.date))[0];
+  return { card, meds, weight: g ? { kg: g.weight, date: g.date } : null };
+}
+// the card itself (also shown on the lock screen, read-only)
+function emergencyCardHTML({ card: c, meds, weight }) {
+  const a = Child.birth ? ageOn(Child.birth) : null;
+  const contacts = (c.contacts || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^(.*?)[\s:—–-]*([+\d][\d\s-]{5,})$/); return m ? telBtn(m[1].trim() || 'Call', m[2].trim()) : `<p>${esc(l)}</p>`; }).join('');
+  const allMeds = [...meds, ...(c.meds ? [c.meds] : [])];
+  return `<div class="sos-card">
+    <div class="sos-head"><span class="sos-ic">🚑</span><div class="grow"><span class="eyebrow">Emergency information · জরুরি তথ্য</span><b>${esc(Child.name || 'Affaan')}</b><span class="sm">${esc(Child.nameBn || '')}${Child.birth ? ` · born ${fmtDate(Child.birth)}${a ? ' · ' + ageText(a) : ''}` : ''}</span></div>
+      <div class="sos-blood"><small>Blood · রক্ত</small><b>${esc(c.blood || '—')}</b></div></div>
+    <div class="sos-grid">
+      <div class="sos-box ${c.allergies ? 'alert' : ''}"><small>Allergies · অ্যালার্জি</small><b>${esc(c.allergies || 'None known')}</b></div>
+      <div class="sos-box"><small>Weight · ওজন</small><b>${weight ? `${weight.kg} kg <span class="sm muted">(${fmtDate(weight.date)})</span>` : '—'}</b></div>
+      <div class="sos-box"><small>Health conditions · অসুস্থতা</small><b>${esc(c.conditions || 'None')}</b></div>
+      <div class="sos-box"><small>Current medicines · চলমান ওষুধ</small><b>${allMeds.length ? allMeds.map(esc).join('<br>') : 'None'}</b></div>
+    </div>
+    <div class="sos-calls">
+      ${telBtn('National emergency · জাতীয় জরুরি সেবা', '999')}
+      ${telBtn((c.doctor || 'Doctor') + ' · ডাক্তার', c.doctorPhone)}
+      ${c.hospital || c.hospitalPhone ? `${telBtn((c.hospital || 'Hospital') + ' · হাসপাতাল', c.hospitalPhone)}${c.hospital && !c.hospitalPhone ? `<p><b>${esc(c.hospital)}</b></p>` : ''}${c.hospitalAddr ? `<p class="sm muted">📍 ${esc(c.hospitalAddr)}</p>` : ''}` : ''}
+      ${contacts}
+    </div>
+    ${c.notes ? `<p class="sos-notes">${esc(c.notes)}</p>` : ''}
+  </div>`;
+}
+async function emergencyHTML() {
+  const d = await emergencyData(), c = d.card, empty = !c.blood && !c.allergies && !c.doctorPhone && !c.contacts;
+  return `${empty ? `<div class="callout blue"><b>Fill this in once</b>Blood group, allergies and the phone numbers you would need in a hurry. Anyone holding the phone can open it from the PIN screen — no PIN needed.</div>` : ''}
+    ${emergencyCardHTML(d)}
+    <div class="btnrow"><button class="btn" data-act="sosEdit">✏️ Edit · সম্পাদনা</button></div>
+    <p class="muted sm">${c.showOnLock === false ? 'Hidden from the PIN screen.' : 'Shown on the PIN screen as “🚑 Emergency info”, so a helper can call you or the doctor.'} Current medicines and weight update automatically from prescriptions and growth records. Syncs to both parents.</p>`;
+}
+ACT.sosEdit = async () => { const c = await DB.data('emergency:card') || {}; Sheet.open({
+  title: '🚑 Emergency card · <span class="bn">জরুরি তথ্য</span>',
+  body: `${F.row(F.select('blood', 'Blood group', 'রক্তের গ্রুপ', BLOOD.map(b => [b, b || 'Not known']), c.blood || ''), F.text('allergies', 'Allergies', 'অ্যালার্জি', c.allergies || '', 'placeholder="e.g. penicillin, peanuts"'))}
+    ${F.text('conditions', 'Health conditions', 'অসুস্থতা', c.conditions || '', 'placeholder="e.g. asthma, febrile seizures"')}
+    ${F.text('meds', 'Other regular medicines', 'অন্যান্য ওষুধ', c.meds || '', 'placeholder="Prescriptions are added automatically"')}
+    ${F.row(F.text('doctor', 'Doctor', 'ডাক্তার', c.doctor || ''), F.text('doctorPhone', 'Doctor phone', 'ফোন', c.doctorPhone || '', 'type="tel" inputmode="tel"'))}
+    ${F.row(F.text('hospital', 'Nearest hospital', 'হাসপাতাল', c.hospital || ''), F.text('hospitalPhone', 'Hospital phone', 'ফোন', c.hospitalPhone || '', 'type="tel" inputmode="tel"'))}
+    ${F.text('hospitalAddr', 'Hospital address', 'ঠিকানা', c.hospitalAddr || '')}
+    ${F.area('contacts', 'Family contacts — one per line', 'পরিবারের নম্বর', c.contacts || '', 'rows="3" placeholder="Abbu — 017XXXXXXXX\nAmmu — 018XXXXXXXX\nNanu — 019XXXXXXXX"')}
+    ${F.text('notes', 'Anything else', 'অন্যান্য', c.notes || '', 'placeholder="e.g. speaks Bangla, afraid of injections"')}
+    <label class="switch sm"><input type="checkbox" name="showOnLock" ${c.showOnLock === false ? '' : 'checked'}><span></span> Show on the PIN screen (no PIN needed)</label>`,
+  save: async fd => { const o = {}; for (const k of ['blood', 'allergies', 'conditions', 'meds', 'doctor', 'doctorPhone', 'hospital', 'hospitalPhone', 'hospitalAddr', 'contacts', 'notes']) o[k] = val(fd, k);
+    o.showOnLock = fd.get('showOnLock') === 'on'; await DB.put('emergency', o, 'emergency:card'); }
+}); };

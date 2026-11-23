@@ -3,7 +3,7 @@
  Locks on open and after the app has been in the background for the chosen time. */
 const Lock = (() => {
   const ITER = 150000;
-  let entered = '', mode = 'unlock', firstPin = '', fails = 0, coolUntil = 0, onDone = null, hiddenAt = 0, locked = false;
+  let sosOK = false, sosOpen = false, entered = '', mode = 'unlock', firstPin = '', fails = 0, coolUntil = 0, onDone = null, hiddenAt = 0, locked = false;
   const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
   async function hash(pin, saltB64) {
     const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
@@ -30,10 +30,19 @@ const Lock = (() => {
         <div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-k="${n}">${n}<small class="bn">${bnNum(n)}</small></button>`).join('')}
           <button data-k="ok" class="kp-ok" ${entered.length < 4 ? 'disabled' : ''}>OK</button><button data-k="0">0<small class="bn">০</small></button><button data-k="del" aria-label="Delete">⌫</button></div>
         ${mode === 'unlock' ? '<button class="linkbtn" data-k="forgot">Forgot PIN? · পিন ভুলে গেছেন?</button>' : mode === 'old' ? '<button class="linkbtn" data-k="cancel">Cancel</button>' : ''}
+        ${mode === 'unlock' && sosOK ? '<button class="lock-sos" data-k="sos">🚑 Emergency info · <span class="bn">জরুরি তথ্য</span></button>' : ''}
       </div>`;
+  }
+  // the emergency card opens without the PIN (read-only), if the parents chose to show it
+  async function sosCheck() { try { const c = await DB.data('emergency:card'); sosOK = !!c && c.showOnLock !== false && !!(c.blood || c.allergies || c.doctorPhone || c.contacts || c.hospitalPhone); } catch (e) { sosOK = false; } if (locked && !sosOpen) render(); }
+  async function sosShow() {
+    sosOpen = true; const el = $('#lock');
+    el.innerHTML = `<div class="lock-sosview">${typeof emergencyCardHTML === 'function' ? emergencyCardHTML(await emergencyData()) : ''}<button class="btn" data-k="sosClose">← Back to PIN · পিনে ফিরুন</button></div>`;
   }
   async function key(k) {
     if (Date.now() < coolUntil) return;
+    if (k === 'sos') return sosShow();
+    if (k === 'sosClose') { sosOpen = false; render(); return; }
     if (k === 'del') entered = entered.slice(0, -1);
     else if (k === 'forgot') return forgot();
     else if (k === 'cancel') { hide(); return; }
@@ -57,7 +66,7 @@ const Lock = (() => {
   function finish() { hide(); const f = onDone; onDone = null; if (f) f(); }
   function show(m, cb) {
     mode = m; entered = ''; firstPin = ''; onDone = cb; locked = true;
-    document.body.classList.add('locked'); $('#lock').hidden = false; render();
+    document.body.classList.add('locked'); $('#lock').hidden = false; sosOpen = false; render(); sosCheck();
   }
   function hide() { locked = false; document.body.classList.remove('locked'); $('#lock').hidden = true; $('#lock').innerHTML = ''; }
   async function forgot() {
@@ -74,7 +83,7 @@ const Lock = (() => {
   }
   function bind() {
     $('#lock').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) key(b.dataset.k); });
-    document.addEventListener('keydown', e => { if (!locked) return; if (/^\d$/.test(e.key)) key(e.key); else if (e.key === 'Backspace') key('del'); else if (e.key === 'Enter') key('ok'); });
+    document.addEventListener('keydown', e => { if (!locked || sosOpen) return; if (/^\d$/.test(e.key)) key(e.key); else if (e.key === 'Backspace') key('del'); else if (e.key === 'Enter') key('ok'); });
     document.addEventListener('visibilitychange', async () => {
       if (document.hidden) { hiddenAt = Date.now(); return; }
       const after = await DB.meta.get('lockAfter', 60);   // seconds
